@@ -1,0 +1,15 @@
+{
+  "name": "saas",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/js/app.js",
+  "type": "module",
+  "scripts": {
+    "start": "python -m http.server 4173",
+    "dev:api": "node server/index.js",
+    "test": "node --check src/js/app.js && node --check server/index.js && node --test server/tests/*.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

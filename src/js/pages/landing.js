@@ -1,0 +1,33 @@
+import { navigate } from "../core/router.js";
+import { hydrateIcons, icon } from "../components/ui.js";
+import { PLAN_CATALOG, planPrice } from "../config/plans.js";
+
+let landingIntroShown = false;
+
+export function landingPage() {
+  const pro = PLAN_CATALOG.pro;
+  const intro = landingIntroShown ? "" : '<div class="landing-entry" aria-label="Abertura FixFlow"><div class="landing-entry-grid"></div><div class="landing-entry-lines" aria-hidden="true"><i></i><i></i><i></i></div><div class="landing-entry-glow" aria-hidden="true"></div><div class="landing-entry-content"><img src="fixflow.jpg" alt="Logo FixFlow"><strong>Fix<span>Flow</span></strong></div></div>';
+  landingIntroShown = true;
+  return `${intro}<div class="public-page"><header class="public-header"><div class="brand"><span class="brand-mark"><img src="fixflow.jpg" alt="FixFlow"></span><span>FixFlow</span></div><nav><a href="#features">Produto</a><a href="#features">Recursos</a><a href="#pricing">Preços</a><a href="#faq">FAQ</a></nav><div class="public-actions"><button class="secondary-button" data-route="/planos/pro">Conhecer Pro</button><button class="primary-button" data-route="/cadastro">Começar gratuitamente ${icon("arrow-right")}</button></div></header><section class="landing-hero public-hero"><p class="eyebrow">A nova rotina da sua assistência</p><h1>Controle sua assistência técnica <span>em um só lugar.</span></h1><p>Clientes, equipamentos, ordens, orçamentos e pagamentos em um fluxo simples, profissional e sem planilhas.</p><div class="heading-actions"><button class="primary-button" data-route="/cadastro">Começar gratuitamente ${icon("arrow-right")}</button><a class="secondary-button" href="#features">${icon("play")} Ver como funciona</a></div><div class="public-proof"><span>${icon("check-circle-2")} Sem cartão de crédito</span><span>${icon("check-circle-2")} Comece em poucos minutos</span><span>${icon("check-circle-2")} Link para seu cliente</span></div></section><section class="landing-section" id="features"><p class="eyebrow">Tudo conectado</p><h2>Menos perguntas. Mais fluxo.</h2><p>O FixFlow organiza o trabalho da sua assistência do balcão à bancada.</p><div class="feature-grid"><div class="feature">${icon("wrench")}<h3>Ordens sob controle</h3><p>Registre equipamentos, diagnósticos, prioridades e cada mudança de status.</p></div><div class="feature">${icon("send")}<h3>Clientes informados</h3><p>Compartilhe um link público para o cliente acompanhar o reparo sem criar conta.</p></div><div class="feature">${icon("wallet-cards")}<h3>Financeiro claro</h3><p>Saiba o que está pendente, recebido e atrasado em uma única visão.</p></div></div></section><section class="landing-section flow-section"><p class="eyebrow">Como funciona</p><h2>Do aparelho recebido ao pagamento.</h2><div class="flow-grid">${["Cadastre o cliente", "Registre o equipamento", "Crie a ordem de serviço", "Atualize o reparo", "Cliente acompanha pelo link", "Registre o pagamento"].map((item, index) => `<div class="flow-step"><b>0${index + 1}</b><span>${item}</span></div>`).join("")}</div></section><section class="landing-section" id="pricing"><p class="eyebrow">Planos simples</p><h2>Comece no seu ritmo.</h2><div class="pricing-grid"><div class="price-card"><p class="eyebrow">FREE</p><h3>Gratuito</h3><p>Para começar a organizar sua operação.</p><button class="secondary-button" data-route="/cadastro">Começar grátis</button></div><div class="price-card featured"><p class="eyebrow">PRO</p><h3>${planPrice(pro)} <small>/mês</small></h3><p>Para assistências que querem crescer com controle.</p><button class="primary-button" data-route="/planos/pro">Conhecer Pro</button></div></div></section><section class="landing-section faq-section" id="faq"><p class="eyebrow">Perguntas frequentes</p><h2>Tudo claro antes de começar.</h2>${["O que é o FixFlow?", "Preciso instalar alguma coisa?", "Posso testar gratuitamente?", "O cliente precisa criar uma conta?", "Como funciona o acompanhamento da ordem?", "Como funcionam os planos?"].map((question) => `<details><summary>${question}${icon("plus")}</summary><p>O FixFlow é uma plataforma online para organizar sua assistência técnica. Você pode começar gratuitamente e evoluir conforme sua operação cresce.</p></details>`).join("")}</section><footer class="public-footer"><div class="brand"><span class="brand-mark"><img src="fixflow.jpg" alt="FixFlow"></span><span>FixFlow</span></div><span>Gestão que acompanha seu trabalho.</span><a href="mailto:fixflowconsult@gmail.com">Fale conosco: fixflowconsult@gmail.com</a></footer></div>`;
+}
+
+export function bindLanding() {
+  if (document.querySelector(".landing-entry")) window.setTimeout(() => document.querySelector(".landing-entry")?.remove(), 3000);
+  const hero = document.querySelector(".public-hero");
+  document.querySelectorAll("[data-route]").forEach((button) => { button.onclick = () => navigate(button.dataset.route); });
+  const pricingGrid = document.querySelector(".pricing-grid");
+  const business = PLAN_CATALOG.business;
+  if (pricingGrid && !pricingGrid.querySelector('[data-plan="business"]')) {
+    pricingGrid.insertAdjacentHTML("beforeend", `<div class="price-card business-card"><p class="eyebrow">BUSINESS</p><h3>${planPrice(business)} <small>/mês</small></h3><p>${business.description}</p><button class="primary-button" data-route="/planos/pro">Conhecer Business ${icon("arrow-right")}</button></div>`);
+    pricingGrid.querySelector('[data-plan="business"]')?.addEventListener("click", () => navigate("/checkout/business"));
+    const businessButton = pricingGrid.lastElementChild.querySelector("[data-route]");
+    businessButton.onclick = () => navigate("/checkout/business");
+  }
+  document.querySelectorAll('a[href^="#"]').forEach((link) => { link.onclick = (event) => { event.preventDefault(); document.querySelector(link.getAttribute("href"))?.scrollIntoView({ behavior: "smooth" }); }; });
+  if (hero && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    let frame;
+    hero.addEventListener("pointermove", (event) => { cancelAnimationFrame(frame); frame = requestAnimationFrame(() => { const bounds = hero.getBoundingClientRect(); hero.style.setProperty("--pointer-x", `${Math.max(0, Math.min(100, ((event.clientX - bounds.left) / bounds.width) * 100))}%`); hero.style.setProperty("--pointer-y", `${Math.max(0, Math.min(100, ((event.clientY - bounds.top) / bounds.height) * 100))}%`); }); }, { passive: true });
+    hero.addEventListener("pointerleave", () => { hero.style.setProperty("--pointer-x", "50%"); hero.style.setProperty("--pointer-y", "42%"); });
+  }
+  hydrateIcons();
+}

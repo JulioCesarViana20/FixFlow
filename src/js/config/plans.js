@@ -1,0 +1,10 @@
+import { formatCurrency } from "../utils/format.js";
+
+export const PLAN_CATALOG = {
+  free: { code: "free", name: "Free", description: "Para começar com organização.", priceCents: 0, interval: "month", limits: { clients: 20, orders: 10, equipment: 20, teamMembers: 1 }, featureKeys: ["basic_dashboard", "basic_quotes", "basic_finance"], features: ["Até 20 clientes", "Até 10 ordens por mês", "Acompanhamento básico das ordens", "Cadastro de equipamentos", "Orçamentos básicos", "Controle financeiro básico", "Dashboard básico", "Suporte padrão"] },
+  pro: { code: "pro", name: "Pro", description: "Para assistências que querem crescer.", priceCents: 4999, interval: "month", limits: { clients: -1, orders: -1, equipment: -1, teamMembers: 3 }, featureKeys: ["advanced_dashboard", "advanced_quotes", "advanced_finance", "reports", "ai_assistant", "public_tracking", "automations", "custom_branding", "priority_support"], features: ["Clientes ilimitados", "Ordens de serviço ilimitadas", "Equipamentos ilimitados", "Acompanhamento completo pelo cliente", "Histórico e timeline completos", "Orçamentos completos", "Controle financeiro completo", "Dashboard completo", "Relatórios", "IA ampliada", "Automações", "Personalização da empresa", "Suporte prioritário"] },
+  business: { code: "business", name: "Business", description: "Para operações com equipe e escala.", priceCents: 9999, interval: "month", limits: { clients: -1, orders: -1, equipment: -1, teamMembers: -1 }, featureKeys: ["advanced_dashboard", "advanced_quotes", "advanced_finance", "reports", "ai_assistant", "public_tracking", "automations", "custom_branding", "priority_support", "team_management", "api_access", "audit_log"], features: ["Tudo do Pro", "Equipe ilimitada", "Gestão de equipe", "Acesso à API", "Histórico de auditoria", "Automações avançadas", "Suporte prioritário dedicado"] },
+};
+
+export function planPrice(plan) { return formatCurrency(plan.priceCents / 100); }
+export function intervalLabel(interval) { return interval === "year" ? "ano" : "mês"; }
