@@ -29,7 +29,7 @@ registerRoute("/onboarding", () => renderPrivate(onboardingPage(), bindOnboardin
 registerRoute("/app/dashboard", () => renderPrivate(dashboardPage()));
 registerRoute("/app/orders", () => renderPrivate(ordersPage(), bindOrderCards));
 registerRoute("/app/clients", () => renderPrivate(placeholderPage("Clientes", "Cadastre e acompanhe seus clientes.")));
-registerRoute("/app/client", () => renderPrivate(placeholderPage("Área do cliente", "Compartilhe atualizações do serviço com seus clientes.")));
+registerRoute("/app/client", () => renderPrivate(placeholderPage("Área do cliente", "Compartilhe atualizações do trabalho com seus clientes.")));
 registerRoute("/app/billing", () => renderPrivate(billingPage(), bindBilling));
 registerRoute("/checkout/pro", () => renderPublic(checkoutPage("pro"), () => bindCheckout("pro")));
 registerRoute("/checkout/business", () => renderPublic(checkoutPage("business"), () => bindCheckout("business")));

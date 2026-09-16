@@ -6,8 +6,8 @@ O cadastro e as ações protegidas usam a API em `http://localhost:3333`. Execut
 
 ## Catálogo atual
 
-- **Free**: R$ 0/mês, até 20 clientes, 10 ordens e 20 equipamentos; recursos básicos.
-- **Pro**: R$ 49,99/mês, limites operacionais ilimitados, relatórios, IA, automações e personalização.
+- **Free**: R$ 0/mês, até 20 contatos, 10 demandas e 20 recursos; recursos básicos.
+- **Pro**: R$ 49,99/mês, fluxos e registros ilimitados, relatórios, IA, automações e personalização.
 - **Business**: R$ 99,99/mês, tudo do Pro, mais equipe ilimitada, API e auditoria.
 
 Os preços, limites e permissões são mantidos no catálogo do backend e replicados no catálogo visual do frontend. O backend é a autoridade final para permitir recursos e criações. Ao cancelar ou expirar uma assinatura, o workspace volta aos recursos do Free sem apagar dados excedentes.

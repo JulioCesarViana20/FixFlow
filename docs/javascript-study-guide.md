@@ -1,182 +1,360 @@
-# Guia de estudo do JavaScript do FixFlow
+# Guia de estudo de JavaScript do FixFlow
 
-Este projeto tem duas partes:
+Este guia descreve o estado atual do projeto e uma ordem prática para estudá-lo.
+O FixFlow é um SaaS para organizar processos, demandas e responsabilidades de
+empresas de diferentes segmentos, dividido em:
 
-- `src/js`: frontend, executado no navegador.
-- `server`: backend da API de billing, executado com Node.js.
+- **Frontend:** JavaScript nativo executado no navegador em `src/js`.
+- **API:** Node.js sem framework HTTP em `server`.
+- **Persistência planejada:** PostgreSQL descrito em `server/database/schema.sql`.
+- **Documentação funcional:** `docs/billing.md`.
 
-## Como o frontend funciona
+## Como executar
 
-O navegador carrega `src/js/app.js`. Esse arquivo registra as rotas, escolhe a tela atual e injeta HTML dentro de `#app`. As páginas são funções que retornam strings HTML; depois, funções `bind...` conectam os eventos dos botões e formulários.
+Na raiz do projeto:
 
-Fluxo principal:
+```bash
+npm start
+```
 
-1. `app.js` inicia o roteador.
-2. O roteador lê o hash, por exemplo `#/login`.
-3. Uma página é renderizada.
-4. O estado vem de `store.js`.
-5. Eventos são conectados ao DOM.
-6. Uma ação atualiza o estado e navega para outra rota.
+Isso serve os arquivos estáticos em `http://localhost:4173`.
 
-## Frontend: entrada e infraestrutura
+Para iniciar a API em outro terminal:
+
+```bash
+npm run dev:api
+```
+
+O servidor usa a porta `3333` por padrão. Em produção, `server/config/env.js`
+exige `DATABASE_URL`, credenciais da InfinitePay e o segredo do webhook.
+
+Para executar as verificações existentes:
+
+```bash
+npm test
+```
+
+O script verifica a sintaxe de alguns entry points e executa os testes de
+`server/tests`.
+
+## Visao geral do frontend
+
+O ponto de entrada HTML é `index.html`. Ele cria o shell vazio, carrega Lucide
+por CDN, carrega `src/styles/style.css` e inicia `src/js/app.js`.
+
+O frontend usa uma SPA simples:
+
+1. `app.js` registra as rotas.
+2. `router.js` lê o hash, por exemplo `#/login`.
+3. O handler da rota chama uma page que retorna uma string HTML.
+4. O HTML é inserido em `#app`.
+5. Uma função `bind...` conecta formulários, botões e outros eventos.
+6. O estado local ou a API fornece os dados.
+
+Não há React, Vue ou bundler. As páginas são funções JavaScript e os módulos
+usam ES Modules diretamente no navegador.
 
 ### `src/js/app.js`
 
-É o ponto de entrada da aplicação. Registra as rotas públicas e privadas, decide se deve mostrar o shell do sistema, renderiza conteúdo público ou privado e inicia o roteador.
+É o orquestrador do frontend. Registra as rotas públicas e privadas, decide
+quando montar o shell lateral, renderiza `#app`, hidrata os ícones e inicia o
+roteador.
 
-Estude: imports, funções de ordem superior, callbacks e controle de acesso por rota.
+As funções centrais são:
+
+- `renderPublic`: esconde sidebar/topbar e renderiza páginas públicas.
+- `renderPrivate`: exige autenticação local e monta o shell operacional.
+- `registerRoute`: associa um caminho a um handler.
+- `startRouter`: inicia a primeira renderização.
+
+Estude imports, callbacks, closures e o ciclo de renderização.
 
 ### `src/js/core/router.js`
 
-Implementa um roteador simples usando o hash da URL. `registerRoute` associa caminho e função; `navigate` muda a URL; `currentPath` lê a rota atual; `startRouter` escuta mudanças do navegador.
+Implementa o roteamento por hash com um `Map`. `navigate("/login")` muda a URL
+para `#/login`, enquanto `currentPath()` lê o caminho atual. Os eventos
+`hashchange` e `popstate` renderizam novamente a rota.
 
-Estude: `Map`, eventos `hashchange`/`popstate` e funções callback.
+Não confunda este roteador com um servidor: todas as páginas continuam sendo
+servidas por `index.html`.
 
 ### `src/js/core/store.js`
 
-É o estado local da aplicação. Salva usuários, workspaces e sessão no `localStorage`. Também cria contas, autentica, encerra sessão e altera o workspace.
+É o armazenamento local usado hoje pelo frontend. A chave
+`fixflow.app.v1` guarda usuários, workspaces e sessão em `localStorage`.
 
-Também contém `requestPasswordReset` e `resetPassword`: cria um token temporário de 15 minutos, permite uma única troca e remove o token depois do uso.
+Responsabilidades:
 
-Importante: hoje o cadastro e login ainda são locais. Isso é adequado para protótipo, mas não para autenticação real em produção.
+- criar conta e workspace;
+- autenticar e encerrar sessão;
+- atualizar workspace;
+- registrar atividades;
+- solicitar e concluir reset local de senha;
+- calcular se existe uma sessão autenticada.
 
-Estude: estado, persistência, `localStorage`, objetos e arrays.
+As senhas locais são transformadas por SHA-256 no navegador. Isso é útil para o
+protótipo, mas não substitui autenticação server-side. A API já possui um fluxo
+separado de cadastro com `scrypt`; os dois fluxos ainda não estão integrados.
 
 ### `src/js/components/ui.js`
 
-Reúne funções visuais reutilizáveis: ícones Lucide, toast, cabeçalho de página, estado vazio e botão principal.
+Contém os componentes visuais reutilizáveis: geração/hidratação de ícones
+Lucide, toast, cabeçalho de página, estados vazios e botões.
 
-Estude: funções que retornam HTML, template literals e reutilização de componentes.
+Observe como template literals permitem compor HTML, mas exigem cuidado com
+dados vindos do usuário. Para isso, use `escapeHtml` de `utils/format.js`.
 
 ### `src/js/components/shell.js`
 
-Controla o layout privado do empresário: sidebar, workspace atual, breadcrumb, navegação entre páginas e logout.
+Monta a área autenticada: sidebar, workspace, breadcrumb, ações do topo,
+logout e navegação entre módulos. Usa `dataset`, `classList`, listeners e
+funções de renderização.
 
-Estude: manipulação do DOM, `dataset`, `classList` e eventos de clique.
+### `src/js/utils/format.js` e `src/js/utils/validation.js`
 
-### `src/js/utils/format.js`
+`format.js` reúne funções puras para escapar HTML, formatar moeda em reais e
+gerar iniciais.
 
-Possui funções pequenas de apresentação: escapar HTML, formatar moeda em reais e gerar iniciais.
+`validation.js` centraliza validações de email, telefone brasileiro e regras de
+entrada. Formato válido não prova que um email ou telefone pertence à pessoa;
+produção ainda exige confirmação por email ou OTP.
 
-Estude: funções puras e `toLocaleString`.
+## Frontend: rotas e páginas
 
-### `src/js/utils/validation.js`
+As rotas são registradas em `src/js/app.js`:
 
-Centraliza as regras de entrada. Valida email, bloqueia domínios de exemplo/temporários comuns, valida DDD e quantidade de dígitos de telefones brasileiros e formata o telefone enquanto o usuário digita.
+| Rota | Tipo | Arquivo |
+|---|---|---|
+| `/` | pública | `pages/landing.js` |
+| `/privacidade` | pública | `pages/legal.js` |
+| `/termos` | pública | `pages/legal.js` |
+| `/planos/pro` | pública | `pages/pro-comparison.js` |
+| `/login` | pública | `pages/auth.js` |
+| `/cadastro` | pública | `pages/auth.js` |
+| `/recuperar-senha` | pública | `pages/recovery.js` |
+| `/onboarding` | pública após cadastro | `pages/onboarding.js` |
+| `/checkout/pro` | pública/autorizada | `pages/checkout.js` |
+| `/checkout/business` | pública/autorizada | `pages/checkout.js` |
+| `/checkout/sucesso` | pública | `pages/checkout.js` |
+| `/checkout/pendente` | pública | `pages/checkout.js` |
+| `/checkout/falhou` | pública | `pages/checkout.js` |
+| `/app/dashboard` | privada | `pages/dashboard.js` |
+| `/app/orders` | privada | `pages/orders.js` |
+| `/app/clients` | privada/provisória | `pages/placeholder.js` |
+| `/app/client` | privada/provisória | `pages/placeholder.js` |
+| `/app/billing` | privada | `pages/billing.js` |
+| `/app/history` | privada/provisória | `pages/placeholder.js` |
+| `/app/settings` | privada | `pages/settings.js` |
 
-Importante: formato válido não prova que o email ou telefone pertence à pessoa. Para isso ainda será necessário email de confirmação ou OTP por SMS.
+### Páginas principais
 
-## Frontend: páginas
+- `landing.js`: landing page, posicionamento para empresas de diferentes
+  segmentos, links de âncora, CTA, planos e efeito de movimento do hero.
+- `auth.js`: login e cadastro locais, validação, prevenção de email duplicado
+  e redirecionamento para onboarding ou dashboard.
+- `recovery.js`: fluxo local de recuperação e troca de senha.
+- `onboarding.js`: empresa, telefone e categoria do negócio.
+- `dashboard.js`: indicadores, status e ordens recentes.
+- `orders.js`: kanban de ordens por status.
+- `billing.js`: planos e pagamentos consumidos pela API.
+- `checkout.js`: criação de checkout e estados de retorno do pagamento.
+- `pro-comparison.js`: comparação dos planos.
+- `legal.js`: páginas de privacidade e termos.
+- `settings.js`: configurações e ações de conta.
+- `placeholder.js`: telas temporárias para módulos ainda não implementados.
 
-### `src/js/pages/landing.js`
+### Intro/splash screen
 
-Monta a página pública de apresentação. Também conecta os botões de navegação, links de âncora e o efeito 3D que acompanha mouse/toque no herói.
+Na primeira renderização da landing page, `landing.js` insere `.landing-entry`.
+A abertura atual é desenhada em CSS com um SVG inline do símbolo, wordmark,
+halo azul discreto e transições de opacity, blur e transform.
 
-### `src/js/pages/auth.js`
+O fluxo dura aproximadamente 3 segundos:
 
-Monta login e cadastro. Valida email, confirma senha, evita email duplicado, cria a conta no store e redireciona para o primeiro acesso.
+1. símbolo surge com blur e escala reduzidos;
+2. halo e wordmark aparecem suavemente;
+3. a marca permanece estabelecida por um curto intervalo;
+4. o overlay faz fade-out e é removido pelo `bindLanding`.
 
-No login, também leva o usuário para a página de recuperação quando ele clica em “Esqueci minha senha”.
+`prefers-reduced-motion` desativa as animações internas, preserva a leitura da
+marca e mantém a remoção do overlay. O conteúdo da aplicação é renderizado por
+baixo, portanto a intro não deve bloquear o carregamento nem permanecer
+capturando cliques depois do fim.
 
-### `src/js/pages/recovery.js`
+O visual e o timing estão em `src/styles/style.css`; a estrutura da marca está
+em `src/js/pages/landing.js`.
 
-Monta o formulário de recuperação, valida o email, exibe o formulário de nova senha no modo local e conecta a redefinição ao store. Em produção, o formulário deverá ser acessado por um link enviado por email.
-
-### `src/js/pages/onboarding.js`
-
-Monta o primeiro acesso do empresário. Valida telefone, aplica máscara, oferece categorias de negócio e revela o campo livre quando `Outros` é escolhido.
-
-### `src/js/pages/dashboard.js`
-
-Calcula os indicadores do workspace e monta a visão geral: ordens abertas, status, total a receber e ordens recentes.
-
-### `src/js/pages/orders.js`
-
-Monta o kanban de ordens de serviço por status. Também conecta o clique de cada card à rota da ordem.
-
-### `src/js/pages/billing.js`
-
-Consulta os planos na API, monta os cards de preço e inicia o checkout. O preço não é confiado ao frontend; o backend decide o plano oficial.
-
-### `src/js/pages/placeholder.js`
-
-É uma tela provisória reutilizável para módulos ainda não implementados, como clientes, histórico e configurações.
-
-## Backend: entrada e infraestrutura
+## Backend: composição da API
 
 ### `server/index.js`
 
-Inicializa dependências, cria o roteador, registra as rotas de billing, aplica autenticação e instala o bloqueio global de requisições.
+É o composition root. Instancia repositórios, serviços, controllers, router e
+request guard; registra as rotas e inicia o servidor HTTP.
 
-### `server/config/env.js`
+A separação importante é:
 
-Lê variáveis de ambiente e define configurações como porta, banco, URL da aplicação e credenciais do gateway. Em produção, exige os segredos obrigatórios.
+```text
+request -> Router -> middleware -> controller -> service -> repository/gateway
+```
 
 ### `server/http/router.js`
 
-É o roteador HTTP próprio do backend. Encaminha método e caminho para handlers, lê JSON, limita o corpo a 64 KB e transforma erros internos em respostas públicas controladas.
+É um roteador HTTP próprio. Encaminha método e caminho, lê JSON, limita o corpo
+da requisição e transforma falhas internas em respostas públicas controladas.
 
-### `server/middleware/auth.js`
+### `server/config/env.js`
 
-Valida os headers de autenticação de desenvolvimento (`x-user-id` e `x-workspace-id`) e verifica acesso a funcionalidades pagas.
+Centraliza `PORT`, `NODE_ENV`, `DATABASE_URL`, `APP_URL`, credenciais da
+InfinitePay e tolerância do período de cobrança. Segredos obrigatórios são
+exigidos quando `NODE_ENV=production`.
 
-Ainda precisa ser substituído por autenticação server-side real.
+### Middlewares
 
-### `server/middleware/request-guard.js`
+- `server/middleware/request-guard.js`: rate limit em memória por IP/método/rota
+  e limite de payload. Retorna `429` ou `413`.
+- `server/middleware/auth.js`: valida os headers de autenticação atuais
+  (`x-user-id` e `x-workspace-id`) e o acesso ao workspace.
 
-Protege a API contra abuso básico: limita requisições por IP, método e rota, retorna `429` e bloqueia corpos muito grandes com `413`.
+O header de desenvolvimento não deve ser tratado como autenticação final de
+produção. Ele precisa ser substituído por sessão ou token server-side.
 
-O contador atual fica em memória. Em produção com várias instâncias, deve ser migrado para Redis ou outro armazenamento compartilhado.
+## Backend: autenticação, conta e consentimento
+
+### `server/services/auth.service.js`
+
+O cadastro server-side:
+
+1. valida nome, email e senha;
+2. normaliza o email;
+3. rejeita duplicidade;
+4. exige aceite da política e dos termos;
+5. deriva a senha com `scrypt` e salt aleatório;
+6. cria usuário, workspace e membership OWNER;
+7. registra os aceites legais.
+
+`server/controllers/auth.controller.js` e `server/routes/auth.routes.js`
+expõem atualmente `POST /api/auth/register`.
+
+### Consentimento e dados legais
+
+- `server/config/legal.js`: versões oficiais dos documentos.
+- `server/services/consent.service.js`: valida e registra os dois aceites.
+- `server/repositories/legal.repository.js`: persistência temporária em memória.
+
+O aceite guarda versão, data, IP e user-agent. O registro é revertido se a
+gravação do consentimento falhar durante o cadastro.
+
+### Conta e privacidade
+
+`server/services/account.service.js` concentra operações que exigem OWNER:
+
+- consultar assinatura;
+- cancelar assinatura;
+- exportar dados;
+- desativar workspace;
+- excluir conta após confirmação textual e reautenticação por senha.
+
+As rotas estão em `server/routes/account.routes.js`. A exclusão exige a frase
+`DELETE MY FIXFLOW ACCOUNT`, senha atual e gateway configurado quando há
+assinatura InfinitePay. As operações críticas também geram audit log.
 
 ## Backend: billing
 
-### `server/routes/billing.routes.js`
+### Rotas atuais
 
-Declara as rotas de planos, checkout, assinatura, pagamentos, cancelamento e webhook.
+Declaradas em `server/routes/billing.routes.js`:
 
-### `server/controllers/billing.controller.js`
+- `GET /api/billing/plans`
+- `POST /api/billing/checkout`
+- `GET /api/billing/subscription`
+- `GET /api/billing/payments`
+- `POST /api/billing/cancel`
+- `POST /api/webhooks/infinitepay`
 
-Recebe a requisição HTTP, extrai dados e chama os serviços. Controller deve coordenar o fluxo, não conter toda a regra de negócio.
+Checkout, assinatura, pagamentos, cancelamento e webhook passam por
+`billing.controller.js` e pelos serviços de pagamento e assinatura.
 
-### `server/services/payment.service.js`
+### Serviços e repositórios
 
-Implementa as regras de pagamento: usa preço oficial, cria pedido, chama o gateway, valida webhook, evita eventos duplicados e aprova pagamento.
+- `payment.service.js`: valida plano/preço oficial, cria pedido, chama gateway,
+  processa webhook e evita evento duplicado.
+- `subscription.service.js`: controla status, período, cancelamento, renovação
+  e acesso a recursos.
+- `infinitepay.service.js`: adaptador da InfinitePay; recusa operar sem
+  configuração.
+- `billing.repository.js`: armazenamento em memória atual.
 
-### `server/services/subscription.service.js`
+O frontend nunca deve ser a fonte de verdade do preço. O servidor deve buscar o
+plano oficial por código e ignorar valores enviados pelo cliente.
 
-Controla planos, acesso a recursos, expiração, cancelamento e renovação de assinaturas.
+### Banco de dados
 
-### `server/services/infinitepay.service.js`
+`server/database/schema.sql` documenta o modelo PostgreSQL com tabelas para:
 
-É o adaptador do gateway. Define o ponto onde a integração oficial da InfinitePay será conectada e recusa operar enquanto as credenciais/contrato não estiverem configurados.
+- `plans`;
+- `subscriptions`;
+- `payments`;
+- `webhook_events`;
+- `legal_acceptances`;
+- `workspaces`;
+- `workspace_members`;
+- `audit_logs`.
 
-### `server/repositories/billing.repository.js`
-
-É a camada de persistência atual, em memória. Guarda planos, pagamentos, assinaturas e eventos de webhook. Depois pode ser trocada por PostgreSQL sem espalhar SQL pelos serviços.
+O schema já prevê constraints, índices, unicidade de assinatura corrente e
+idempotência de webhook. A implementação em execução ainda usa repositórios em
+memória, então reiniciar o servidor perde os dados.
 
 ## Testes
 
-### `server/tests/billing.test.js`
+Os testes usam `node:test` e ficam em `server/tests`:
 
-Testa preço oficial, rejeição de valor adulterado, pedido inexistente, idempotência de webhook, renovação e bloqueio de recurso pago.
+- `auth.test.js`: aceites obrigatórios, versões legais, hash sem senha em texto
+  puro e email duplicado.
+- `account.test.js`: autorização exclusiva de OWNER, isolamento do workspace,
+  confirmação de exclusão e reautenticação.
+- `billing.test.js`: preço oficial, pedido inexistente, webhook duplicado,
+  renovação e bloqueio de recurso pago.
+- `request-guard.test.js`: rate limit e corpo acima do limite.
 
-### `server/tests/request-guard.test.js`
+Ao alterar regras server-side, adicione ou atualize o teste do serviço
+correspondente e execute `npm test`.
 
-Testa o limite de requisições e o bloqueio de payload grande.
+## O que já existe e o que ainda não está integrado
 
-## Próxima etapa recomendada
+Já existe uma fundação de API para autenticação, consentimento, conta e billing,
+além do schema PostgreSQL e da proteção básica de requests. Entretanto:
 
-1. Criar endpoints server-side de cadastro e login.
-2. Persistir usuários em banco, nunca em `localStorage`.
-3. Escolher provedor de email e SMS.
-4. Criar códigos OTP com expiração, limite de envio e limite de tentativas.
-5. Só marcar `email_verified` ou `phone_verified` depois da confirmação.
+- o frontend ainda autentica pelo `localStorage`;
+- a API server-side não possui login/troca de sessão completos;
+- repositories de billing e legal continuam em memória;
+- o adaptador InfinitePay depende de credenciais e contrato configurados;
+- clients, histórico e parte de settings ainda usam placeholders;
+- validação de formato não substitui verificação de email/telefone;
+- o rate limit em memória não funciona como contador compartilhado entre
+  múltiplas instâncias.
 
-## Como estudar sem se perder
+Essa distinção é importante para não estudar o schema como se ele já fosse a
+persistência usada em runtime.
 
-1. Leia `app.js` e `router.js` juntos.
-2. Depois leia `store.js` e acompanhe uma conta sendo criada.
-3. Leia `auth.js` e `onboarding.js` para entender os formulários.
-4. Leia `dashboard.js` para ver como o estado vira interface.
-5. Por fim, estude `server/index.js`, controllers, services e repository.
-6. Altere uma pequena regra, rode `npm test` e observe o resultado.
+## Ordem recomendada de estudo
+
+1. Leia `index.html`, `app.js` e `router.js` para entender o ciclo de tela.
+2. Siga a criação de uma conta por `auth.js`, `validation.js` e `store.js`.
+3. Estude `shell.js`, `dashboard.js` e `orders.js` para ver estado virando UI.
+4. Leia `landing.js` e `style.css`, incluindo a intro/splash e responsividade.
+5. Acompanhe billing do botão em `billing.js` até as rotas da API.
+6. Leia `server/index.js`, router, middleware, controller e service nessa ordem.
+7. Compare `billing.repository.js` e `schema.sql` para entender a migração
+   futura para PostgreSQL.
+8. Leia `auth.service.js`, `consent.service.js` e `account.service.js` junto
+   dos testes correspondentes.
+9. Faça uma alteração pequena, execute `npm test` e observe o fluxo completo.
+
+## Próximas evoluções naturais
+
+1. Integrar cadastro/login do frontend à API.
+2. Implementar sessão segura e autorização server-side real.
+3. Trocar repositories em memória por PostgreSQL.
+4. Implementar envio de email, recuperação segura e verificação de contato.
+5. Completar módulos de clientes, histórico e gestão de equipe.
+6. Adicionar testes de integração HTTP e testes de UI para os fluxos críticos.

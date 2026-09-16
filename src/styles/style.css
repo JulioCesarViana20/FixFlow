@@ -6,121 +6,119 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: var(--bg, #0e1016);
-  animation: landing-entry-fade 3s ease-in-out forwards;
+  background: #090b0f;
+  animation: landing-entry-exit 3s cubic-bezier(.76, 0, .24, 1) forwards;
+  will-change: opacity;
 }
-.landing-entry-grid {
-  position: absolute;
-  inset: -20%;
-  opacity: .34;
-  background-image:
-    linear-gradient(rgba(109, 124, 255, .1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(109, 124, 255, .1) 1px, transparent 1px);
-  background-size: 44px 44px;
-  transform: perspective(500px) rotateX(58deg) scale(1.35);
-  transform-origin: center bottom;
-  mask-image: linear-gradient(to bottom, transparent 5%, black 42%, transparent 100%);
-  animation: landing-entry-grid-move 3s linear forwards;
-}
-.landing-entry-lines {
+.landing-entry::before {
+  content: "";
   position: absolute;
   inset: 0;
-  display: grid;
-  align-content: center;
-  gap: 54px;
-  transform: rotate(-18deg) scale(1.35);
-  opacity: .28;
+  background: radial-gradient(circle at 50% 48%, rgba(54, 93, 210, .07), transparent 33%);
 }
-.landing-entry-lines i {
-  display: block;
-  width: 135%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(109, 124, 255, .75), transparent);
-  box-shadow: 0 0 12px rgba(109, 124, 255, .3);
-  animation: landing-entry-line-slide 2.2s ease-in-out infinite;
-}
-.landing-entry-lines i:nth-child(2) { animation-delay: -700ms; opacity: .65; }
-.landing-entry-lines i:nth-child(3) { animation-delay: -1400ms; opacity: .4; }
-.landing-entry-glow {
+.landing-entry-halo {
   position: absolute;
-  width: 360px;
-  height: 360px;
+  width: min(38vw, 360px);
+  aspect-ratio: 1;
   border-radius: 50%;
-  background: rgba(52, 93, 255, .11);
-  filter: blur(70px);
-  animation: landing-entry-glow 3s ease-in-out forwards;
+  border: 1px solid rgba(94, 142, 255, .16);
+  box-shadow: 0 0 80px rgba(44, 94, 220, .1), inset 0 0 50px rgba(44, 94, 220, .06);
+  opacity: 0;
+  transform: scale(.86);
+  animation: landing-entry-halo 3s cubic-bezier(.22, 1, .36, 1) forwards;
 }
 .landing-entry-content {
   position: relative;
   z-index: 1;
   display: grid;
   justify-items: center;
-  gap: 14px;
+  gap: 18px;
+  transform: scale(.96);
+  animation: landing-entry-content 3s cubic-bezier(.22, 1, .36, 1) forwards;
 }
-.landing-entry img {
-  width: 88px;
-  height: 88px;
-  border-radius: 18px;
-  object-fit: cover;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
-  animation: landing-entry-logo 3s ease-in-out forwards;
-}
-.landing-entry strong {
-  color: var(--text);
-  font: 800 32px var(--display);
-  letter-spacing: -1.5px;
+.landing-entry-symbol {
+  width: clamp(68px, 8vw, 92px);
+  height: clamp(68px, 8vw, 92px);
+  display: grid;
+  place-items: center;
   opacity: 0;
-  animation: landing-entry-name 3s ease-in-out forwards;
+  filter: blur(10px);
+  animation: landing-entry-symbol 3s cubic-bezier(.22, 1, .36, 1) forwards;
 }
-.landing-entry strong span {
-  color: var(--accent-bright);
+.landing-entry-symbol svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
-@keyframes landing-entry-fade {
-  0%, 73.333% { opacity: 1; }
+.landing-entry-symbol path {
+  fill: #2f80ed;
+}
+.landing-entry-wordmark {
+  color: #f4f7fb;
+  font: 700 clamp(28px, 3.1vw, 40px)/1 var(--display);
+  letter-spacing: -.055em;
+  opacity: 0;
+  transform: translateY(9px);
+  animation: landing-entry-wordmark 3s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+.landing-entry-wordmark-accent {
+  color: #4e8ff3;
+}
+.landing-entry-rule {
+  width: 0;
+  height: 1px;
+  background: #3985ef;
+  opacity: .7;
+  animation: landing-entry-rule 3s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+@keyframes landing-entry-exit {
+  0%, 76.666% { opacity: 1; }
   100% { opacity: 0; visibility: hidden; }
 }
-@keyframes landing-entry-grid-move {
-  from { background-position: 0 0; }
-  to { background-position: 0 44px; }
+@keyframes landing-entry-content {
+  0%, 76.666% { transform: scale(1); }
+  100% { transform: scale(1.02); }
 }
-@keyframes landing-entry-line-slide {
-  0%, 100% { transform: translateX(-8%); opacity: .25; }
-  50% { transform: translateX(8%); opacity: 1; }
+@keyframes landing-entry-symbol {
+  0% { opacity: 0; filter: blur(10px); transform: scale(.96); }
+  20% { opacity: 1; filter: blur(0); transform: scale(1); }
+  76.666% { opacity: 1; filter: blur(0); }
+  100% { opacity: 0; filter: blur(2px); }
 }
-@keyframes landing-entry-glow {
-  0%, 100% { opacity: .25; transform: scale(.85); }
-  45%, 75% { opacity: .75; transform: scale(1); }
+@keyframes landing-entry-halo {
+  0%, 20% { opacity: 0; transform: scale(.86); }
+  50%, 76.666% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.04); }
 }
-@keyframes landing-entry-logo {
-  0% { opacity: 0; transform: translateY(6px) scale(.95); }
-  20% { opacity: 1; transform: translateY(0) scale(1); }
-  73.333% { opacity: 1; transform: translateY(0) scale(1); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes landing-entry-wordmark {
+  0%, 33.333% { opacity: 0; transform: translateY(9px); }
+  60%, 76.666% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-2px); }
 }
-@keyframes landing-entry-name {
-  0%, 20% { opacity: 0; transform: translateY(5px); }
-  50%, 73.333% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 1; transform: translateY(0); }
+@keyframes landing-entry-rule {
+  0%, 53.333% { width: 0; opacity: 0; }
+  63%, 76.666% { width: 42px; opacity: .7; }
+  100% { width: 42px; opacity: 0; }
+}
+@media (max-width: 720px) {
+  .landing-entry-halo { width: min(68vw, 280px); }
+  .landing-entry-content { gap: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .landing-entry {
-    animation-duration: 3s;
     animation-timing-function: linear;
   }
-  .landing-entry-grid,
-  .landing-entry-lines i,
-  .landing-entry-glow {
-    animation: none;
-  }
+  .landing-entry-symbol,
+  .landing-entry-wordmark,
+  .landing-entry-halo,
+  .landing-entry-rule,
   .landing-entry-content {
-    opacity: 1;
-  }
-  .landing-entry img,
-  .landing-entry strong {
     animation: none;
     opacity: 1;
     transform: none;
+    filter: none;
   }
+  .landing-entry-rule { width: 42px; }
 }
 .table-panel {
   padding: 0;

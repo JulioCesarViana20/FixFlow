@@ -15,10 +15,10 @@ const statuses = [
 export function ordersPage() {
   const workspace = getWorkspace();
   if (!workspace.orders.length) {
-    return `<section class="page">${pageHeader("Operação", "Ordens de serviço", "Acompanhe cada reparo, do recebimento à entrega.", primaryButton("Nova ordem", "new-order"))}${emptyState("Você ainda não possui nenhuma ordem de serviço.", "Crie sua primeira ordem para organizar o atendimento do cliente.", "new-order", "Nova ordem")}</section>`;
+    return `<section class="page">${pageHeader("Operação", "Demandas", "Acompanhe cada processo, do início à conclusão.", primaryButton("Nova demanda", "new-order"))}${emptyState("Você ainda não possui nenhuma demanda.", "Crie seu primeiro registro para organizar o trabalho da equipe.", "new-order", "Nova demanda")}</section>`;
   }
 
-  return `<section class="page">${pageHeader("Operação", "Ordens de serviço", "Acompanhe cada reparo, do recebimento à entrega.", primaryButton("Nova ordem", "new-order"))}<div class="kanban-grid">${statuses.map((status) => column(status, workspace.orders.filter((order) => order.status === status))).join("")}</div></section>`;
+  return `<section class="page">${pageHeader("Operação", "Demandas", "Acompanhe cada processo, do início à conclusão.", primaryButton("Nova demanda", "new-order"))}<div class="kanban-grid">${statuses.map((status) => column(status, workspace.orders.filter((order) => order.status === status))).join("")}</div></section>`;
 }
 
 function column(status, orders) {

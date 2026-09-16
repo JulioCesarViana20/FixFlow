@@ -7,26 +7,26 @@ export function dashboardPage() {
   const orders = workspace.orders;
   const total = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
   const stats = [
-    ["Ordens abertas", orders.length, "wrench"],
+    ["Demandas abertas", orders.length, "wrench"],
     ["Aguardando aprovação", countByStatus("AGUARDANDO APROVAÇÃO"), "clock-3"],
-    ["Em manutenção", countByStatus("EM MANUTENÇÃO"), "settings-2"],
-    ["Prontas para entrega", countByStatus("PRONTO"), "package-check"],
+    ["Em andamento", countByStatus("EM MANUTENÇÃO"), "settings-2"],
+    ["Prontas para concluir", countByStatus("PRONTO"), "package-check"],
     ["Total a receber", formatCurrency(total), "banknote"],
   ];
 
   return `<section class="page">${pageHeader(
     "Visão geral",
     `Bom dia, ${workspace.owner} 👋`,
-    "Sua assistência começa aqui.",
-    primaryButton("Nova ordem", "new-order"),
+    "Sua operação começa aqui.",
+    primaryButton("Nova demanda", "new-order"),
   )}<div class="metric-grid">${stats.map(statCard).join("")}</div>${
     orders.length
       ? recentOrders(orders)
       : emptyState(
           "Sua operação começa aqui",
-          "Crie sua primeira ordem de serviço para começar a acompanhar o fluxo.",
+          "Crie seu primeiro fluxo para começar a acompanhar a operação.",
           "new-order",
-          "Nova ordem",
+          "Nova demanda",
         )
   }</section>`;
 
@@ -40,7 +40,7 @@ function statCard([label, value, iconName]) {
 }
 
 function recentOrders(orders) {
-  return `<div class="dashboard-grid"><div class="panel"><h2 class="panel-title">Ordens de serviço</h2><p class="panel-subtitle">Volume real do seu workspace</p><div class="empty-chart">${icon("chart-no-axes-combined")}<span>O gráfico será preenchido conforme seu histórico crescer.</span></div></div><div class="panel"><h2 class="panel-title">Ordens recentes</h2><div class="recent-list">${orders.slice(-5).reverse().map(orderRow).join("")}</div></div></div>`;
+  return `<div class="dashboard-grid"><div class="panel"><h2 class="panel-title">Demandas em fluxo</h2><p class="panel-subtitle">Volume real do seu workspace</p><div class="empty-chart">${icon("chart-no-axes-combined")}<span>O gráfico será preenchido conforme seu histórico crescer.</span></div></div><div class="panel"><h2 class="panel-title">Atividades recentes</h2><div class="recent-list">${orders.slice(-5).reverse().map(orderRow).join("")}</div></div></div>`;
 }
 
 function orderRow(order) {

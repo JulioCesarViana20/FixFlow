@@ -5,7 +5,7 @@ import { escapeHtml } from "../utils/format.js";
 
 const navigation = [
   { page: "dashboard", label: "Visão geral", icon: "layout-dashboard", section: "Workspace" },
-  { page: "orders", label: "Ordens de serviço", icon: "wrench", section: "Workspace", count: "orders" },
+  { page: "orders", label: "Demandas", icon: "wrench", section: "Workspace", count: "orders" },
   { page: "clients", label: "Clientes", icon: "users", section: "Workspace" },
   { page: "billing", label: "Cobranças", icon: "wallet-cards", section: "Workspace", count: "billing", alert: true },
   { page: "history", label: "Histórico", icon: "history", section: "Gestão" },
@@ -52,7 +52,7 @@ function renderSidebar(workspace, user, path) {
     const count = item.count ? `<b class="${item.alert ? "alert-count" : ""}" data-count="${item.count}">${item.count === "orders" ? workspace.orders.length : 0}</b>` : "";
     return `${section}<button class="nav-item ${item.page === path ? "active" : ""}" data-page="${item.page}">${icon(item.icon)}<span>${item.label}</span>${count}</button>`;
   }).join("");
-  return `<div class="brand"><span class="brand-mark"><img src="fixflow.jpg" alt="FixFlow"></span><span>FixFlow</span></div><div class="workspace-switcher"><span class="workspace-icon">${initials(workspace.company)}</span><span><strong>${escapeHtml(workspace.company || "Sua assistência")}</strong><small>${escapeHtml(workspace.type || "Workspace atual")}</small></span>${icon("chevrons-up-down")}</div><nav class="main-nav" aria-label="Navegação principal">${links}<a class="nav-item" href="index.html" data-page="landing">${icon("sparkles")}<span>Site do FixFlow</span></a></nav><div class="sidebar-bottom"><div class="upgrade-card"><span class="upgrade-icon">${icon("sparkles")}</span><strong>Seu negócio, em fluxo.</strong><p>Você está no controle de tudo.</p><button class="text-button">Conheça o plano Pro ${icon("arrow-up-right")}</button></div><div class="profile-row"><span class="avatar avatar-julio">${initials(user?.name)}</span><span><strong>${escapeHtml(user?.name || "Administrador")}</strong><small>Workspace atual</small></span><button class="icon-button" data-logout aria-label="Sair">${icon("log-out")}</button></div></div>`;
+  return `<div class="brand"><span class="brand-mark"><img src="fixflow.jpg" alt="FixFlow"></span><span>FixFlow</span></div><div class="workspace-switcher"><span class="workspace-icon">${initials(workspace.company)}</span><span><strong>${escapeHtml(workspace.company || "Sua empresa")}</strong><small>${escapeHtml(workspace.type || "Workspace atual")}</small></span>${icon("chevrons-up-down")}</div><nav class="main-nav" aria-label="Navegação principal">${links}<a class="nav-item" href="index.html" data-page="landing">${icon("sparkles")}<span>Site do FixFlow</span></a></nav><div class="sidebar-bottom"><div class="upgrade-card"><span class="upgrade-icon">${icon("sparkles")}</span><strong>Seu negócio, em fluxo.</strong><p>Você está no controle de tudo.</p><button class="text-button">Conheça o plano Pro ${icon("arrow-up-right")}</button></div><div class="profile-row"><span class="avatar avatar-julio">${initials(user?.name)}</span><span><strong>${escapeHtml(user?.name || "Administrador")}</strong><small>Workspace atual</small></span><button class="icon-button" data-logout aria-label="Sair">${icon("log-out")}</button></div></div>`;
 }
 
 function renderTopbar(workspace, path, user) {

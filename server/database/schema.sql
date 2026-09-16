@@ -104,6 +104,6 @@ CREATE TABLE audit_logs (
 INSERT INTO plans (code, name, description, price_cents, billing_interval, limits, features)
 VALUES
   ('free', 'Free', 'Para começar', 0, 'month', '{"clients": 20, "orders": 10, "equipment": 20}', '["basic_dashboard"]'),
-  ('pro', 'Pro', 'Para assistências em crescimento', 4999, 'month', '{"clients": -1, "orders": -1, "equipment": -1, "teamMembers": 3}', '["advanced_dashboard", "advanced_quotes", "advanced_finance", "reports", "ai_assistant", "public_tracking", "automations", "custom_branding", "priority_support"]'),
+  ('pro', 'Pro', 'Para empresas em crescimento', 4999, 'month', '{"clients": -1, "orders": -1, "equipment": -1, "teamMembers": 3}', '["advanced_dashboard", "advanced_quotes", "advanced_finance", "reports", "ai_assistant", "public_tracking", "automations", "custom_branding", "priority_support"]'),
   ('business', 'Business', 'Para operações com equipe e escala', 9999, 'month', '{"clients": -1, "orders": -1, "equipment": -1, "teamMembers": -1}', '["advanced_dashboard", "advanced_quotes", "advanced_finance", "reports", "ai_assistant", "public_tracking", "automations", "custom_branding", "priority_support", "team_management", "api_access", "audit_log"]')
 ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description, price_cents = EXCLUDED.price_cents, billing_interval = EXCLUDED.billing_interval, limits = EXCLUDED.limits, features = EXCLUDED.features, active = TRUE, updated_at = now();

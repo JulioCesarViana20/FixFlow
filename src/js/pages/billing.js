@@ -2,7 +2,7 @@ import { getState } from "../core/store.js";
 import { pageHeader, icon, showToast } from "../components/ui.js";
 
 export function billingPage() {
-  return `<section class="page">${pageHeader("Billing", "Planos e assinatura", "Escolha o plano que acompanha o crescimento da sua assistência.")}<div id="billing-status" class="panel billing-status">Carregando planos oficiais...</div><div id="billing-plans" class="pricing-grid"></div><div class="panel billing-note"><strong>Pagamento seguro</strong><span>A confirmação do plano acontece somente após o webhook validado pelo backend. O redirecionamento do checkout não libera recursos por si só.</span></div></section>`;
+  return `<section class="page">${pageHeader("Billing", "Planos e assinatura", "Escolha o plano que acompanha o crescimento da sua empresa.")}<div id="billing-status" class="panel billing-status">Carregando planos oficiais...</div><div id="billing-plans" class="pricing-grid"></div><div class="panel billing-note"><strong>Pagamento seguro</strong><span>A confirmação do plano acontece somente após o webhook validado pelo backend. O redirecionamento do checkout não libera recursos por si só.</span></div></section>`;
 }
 
 export async function bindBilling() {
