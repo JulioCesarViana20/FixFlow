@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { Router } from "../http/router.js";
+import { registerAuthRoutes } from "../routes/auth.routes.js";
 import { LegalRepository } from "../repositories/legal.repository.js";
 import { ConsentService } from "../services/consent.service.js";
 import { AuthService } from "../services/auth.service.js";
@@ -50,4 +52,51 @@ test("cadastro duplicado é rejeitado", async () => {
   const context = setup();
   await context.auth.register(registration());
   await assert.rejects(() => context.auth.register(registration()), /EMAIL_ALREADY_REGISTERED/);
+});
+
+test("cadastro responde com headers CORS para o frontend", async () => {
+  const router = new Router();
+  registerAuthRoutes(router, {
+    register: async () => ({ userId: "user-123", workspaceId: "workspace-123" }),
+  });
+
+  const payload = JSON.stringify({
+    name: "Responsável FixFlow",
+    email: "owner@example.com",
+    password: "senha-segura-123",
+    acceptance: {
+      privacyPolicy: { accepted: true, version: "1.0" },
+      termsOfUse: { accepted: true, version: "1.0" },
+    },
+  });
+
+  const request = {
+    method: "POST",
+    url: "/api/auth/register",
+    headers: {
+      "content-type": "application/json",
+      "content-length": String(Buffer.byteLength(payload, "utf8")),
+    },
+    socket: { remoteAddress: "127.0.0.1" },
+    async *[Symbol.asyncIterator]() {
+      yield payload;
+    },
+  };
+
+  const response = {
+    headers: {},
+    writeHead(status, headers) {
+      this.statusCode = status;
+      Object.assign(this.headers, headers);
+    },
+    end(body) {
+      this.body = body;
+    },
+  };
+
+  await router.handle(request, response);
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.headers["access-control-allow-origin"], "*");
+  assert.match(String(response.headers["access-control-allow-methods"]), /POST/i);
 });
