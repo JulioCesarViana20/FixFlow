@@ -34,7 +34,7 @@ Terminal da API:
 npm run dev:api
 ```
 
-Esse comando carrega o `.env` automaticamente e inicia a API na porta `3333`.
+Esse comando carrega o `.env` automaticamente e inicia a API na porta `3000`.
 Para iniciar a API usando variáveis já fornecidas pelo ambiente:
 
 ```bash
@@ -123,7 +123,7 @@ server-side usa `scrypt`, e os fluxos ainda não estão unificados.
 
 `src/js/config/api.js` centraliza a origem da API:
 
-- em desenvolvimento local, usa `http://localhost:3333`;
+- em desenvolvimento local, usa `http://localhost:3000`;
 - em produção, usa a origem da aplicação;
 - pode ser sobrescrita por `globalThis.__FIXFLOW_API_URL__`.
 
@@ -170,7 +170,7 @@ Variáveis do `.env.example`:
 
 ```env
 NODE_ENV=development
-PORT=3333
+PORT=3000
 APP_URL=http://localhost:4173
 DATABASE_URL=
 MERCADO_PAGO_API_URL=https://api.mercadopago.com

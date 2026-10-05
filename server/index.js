@@ -46,4 +46,4 @@ registerAccountRoutes(router, accountController, (request, response, next) => {
 });
 
 const server = createServer((request, response) => cors(request, response, () => requestGuard(request, response, () => router.handle(request, response))));
-server.listen(env.port, () => console.log(`FixFlow billing API listening on ${env.port}`));
+server.listen(env.port, () => console.log(`Server rodando na porta ${env.port}`));

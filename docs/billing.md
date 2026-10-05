@@ -2,7 +2,7 @@
 
 ## Desenvolvimento local
 
-O cadastro e as ações protegidas usam a API em `http://localhost:3333`. Execute `npm run dev:api` em um terminal e `npm start` em outro.
+O cadastro e as ações protegidas usam a API em `http://localhost:3000`. Execute `npm run dev:api` em um terminal e `npm start` em outro.
 
 ## Catálogo atual
 
