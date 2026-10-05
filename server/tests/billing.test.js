@@ -44,6 +44,15 @@ test("evento duplicado não renova duas vezes", async () => {
   assert.equal(context.repository.listPayments("workspace-a").length, 1);
 });
 
+test("pagamento pendente pode ser aprovado em uma notificação posterior", async () => {
+  const context = setup();
+  const payment = await pendingPayment(context);
+  context.payments.verifyAndHandleWebhook({ eventId: "evt-pending", eventType: "payment.updated", orderNsu: payment.orderNsu, amountCents: 4999, status: "pending" }, true);
+  assert.equal(context.repository.findPaymentByOrder(payment.orderNsu).status, "pending");
+  const result = context.payments.verifyAndHandleWebhook({ eventId: "evt-approved", eventType: "payment.updated", orderNsu: payment.orderNsu, amountCents: 4999, status: "approved" }, true);
+  assert.equal(result.approved, true);
+});
+
 test("renovação parte do período vigente", async () => {
   const context = setup();
   const first = await pendingPayment(context);
@@ -77,5 +86,23 @@ test("limite de equipe varia por plano", async () => {
   const result = await context.payments.startCheckout({ workspaceId: "workspace-c", userId: "user-c", planCode: "business" });
   const payment = context.repository.findPaymentByOrder(result.orderNsu);
   context.payments.verifyAndHandleWebhook({ eventId: "evt-team", eventType: "paid", orderNsu: payment.orderNsu, amountCents: 9999, status: "approved" }, true);
-  assert.equal(context.subscriptions.canCreate("workspace-c", "teamMembers", 100), true);
+  assert.equal(context.subscriptions.canCreate("workspace-c", "teamMembers", 10), false);
+  assert.equal(context.subscriptions.canCreate("workspace-c", "teamMembers", 9), true);
+});
+
+test("limites de registros seguem o catálogo do plano", async () => {
+  const context = setup();
+  assert.equal(context.subscriptions.canCreate("workspace-a", "orders", 19), true);
+  assert.equal(context.subscriptions.canCreate("workspace-a", "orders", 20), false);
+  assert.equal(context.subscriptions.canCreate("workspace-a", "clients", 20), false);
+  assert.equal(context.subscriptions.canCreate("workspace-a", "transactions", 20), false);
+  const result = await context.payments.startCheckout({ workspaceId: "workspace-pro", userId: "user-pro", planCode: "pro" });
+  const payment = context.repository.findPaymentByOrder(result.orderNsu);
+  context.payments.verifyAndHandleWebhook({ eventId: "evt-pro-limits", eventType: "payment.updated", orderNsu: payment.orderNsu, amountCents: 4999, status: "approved" }, true);
+  assert.equal(context.subscriptions.canCreate("workspace-pro", "orders", 99), true);
+  assert.equal(context.subscriptions.canCreate("workspace-pro", "orders", 100), false);
+  assert.equal(context.subscriptions.canCreate("workspace-pro", "clients", 99), true);
+  assert.equal(context.subscriptions.canCreate("workspace-pro", "clients", 100), false);
+  assert.equal(context.subscriptions.canCreate("workspace-pro", "transactions", 99), true);
+  assert.equal(context.subscriptions.canCreate("workspace-pro", "transactions", 100), false);
 });

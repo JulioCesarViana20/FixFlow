@@ -2,8 +2,7 @@ import { getCurrentUser, getState, getWorkspace, isAuthenticated } from "../core
 import { navigate } from "../core/router.js";
 import { icon } from "../components/ui.js";
 import { PLAN_CATALOG, planPrice, intervalLabel } from "../config/plans.js";
-
-const API_URL = "http://localhost:3333";
+import { API_URL } from "../config/api.js";
 
 export function checkoutPage(planCode = "pro") {
   const workspace = getWorkspace(); const user = getCurrentUser(); const plan = PLAN_CATALOG[planCode] || PLAN_CATALOG.pro;

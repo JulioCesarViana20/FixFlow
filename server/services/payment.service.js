@@ -9,13 +9,14 @@ export class PaymentService {
     const plan = this.subscriptionService.getPlan(planCode);
     if (plan.code === "free") throw new Error("FREE_PLAN_DOES_NOT_REQUIRE_CHECKOUT");
     const current = this.repository.findSubscription(workspaceId);
+    if (current?.plan?.priceCents > plan.priceCents && ["trialing", "active", "cancel_at_period_end"].includes(current.status)) throw new Error("PLAN_DOWNGRADE_NOT_ALLOWED");
     if (current?.plan?.code === plan.code && ["trialing", "active", "past_due"].includes(current.status)) throw new Error("ALREADY_ON_PLAN");
     const existing = this.repository.listPayments(workspaceId).find((payment) => payment.planId === plan.id && payment.status === "pending");
     if (existing) return { paymentId: existing.id, orderNsu: existing.orderNsu, checkoutUrl: existing.checkoutUrl };
     const orderNsu = `fixflow_${crypto.randomUUID()}`;
     const payment = this.repository.savePayment({
       id: crypto.randomUUID(), workspaceId, userId, planId: plan.id,
-      gateway: "infinitepay", orderNsu, amountCents: plan.priceCents,
+      gateway: this.gateway.name || "mercadopago", orderNsu, amountCents: plan.priceCents,
       status: "pending", createdAt: new Date().toISOString(),
     });
     try {
@@ -33,16 +34,21 @@ export class PaymentService {
   handleWebhook(payload) {
     const { eventId, eventType, orderNsu, transactionNsu, status, amountCents } = payload;
     if (!eventId || !eventType || !orderNsu) throw new Error("INVALID_WEBHOOK");
-    const existing = this.repository.findEvent("infinitepay", eventId);
+    const gatewayName = this.gateway.name || "mercadopago";
+    const existing = this.repository.findEvent(gatewayName, eventId);
     if (existing?.processed) return { duplicate: true };
-    this.repository.saveEvent({ gateway: "infinitepay", eventId, eventType, payload, processed: false });
+    this.repository.saveEvent({ gateway: gatewayName, eventId, eventType, payload, processed: false });
     const payment = this.repository.findPaymentByOrder(orderNsu);
     if (!payment) throw new Error("PAYMENT_NOT_FOUND");
     if (Number(amountCents) !== payment.amountCents) throw new Error("PAYMENT_AMOUNT_MISMATCH");
     if (payment.status === "approved") return { duplicate: true };
     if (status !== "approved") {
-      payment.status = status === "failed" ? "failed" : "canceled";
+      payment.status = status === "failed" ? "failed" : status === "pending" ? "pending" : status === "refunded" ? "refunded" : "canceled";
       this.repository.savePayment(payment);
+      const event = this.repository.findEvent(gatewayName, eventId);
+      event.processed = true;
+      event.processedAt = new Date().toISOString();
+      this.repository.saveEvent(event);
       return { approved: false };
     }
     payment.transactionNsu = transactionNsu;
@@ -50,7 +56,7 @@ export class PaymentService {
     if (!plan) throw new Error("PLAN_NOT_FOUND");
     this.subscriptionService.activateFromPayment(payment, plan);
     this.repository.savePayment(payment);
-    const event = this.repository.findEvent("infinitepay", eventId);
+    const event = this.repository.findEvent(gatewayName, eventId);
     event.processed = true;
     event.processedAt = new Date().toISOString();
     this.repository.saveEvent(event);

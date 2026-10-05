@@ -22,3 +22,16 @@ export function emptyState(title, text, action = "", label = "") {
 export function primaryButton(label, action) {
   return `<button class="primary-button" data-action="${action}">${icon("plus")}${label}</button>`;
 }
+
+export function showPlanLimitError(node, error) {
+  node.hidden = false;
+  node.textContent = "";
+  const message = document.createElement("span");
+  message.textContent = `O limite do plano foi atingido (${error.usage}/${error.limit}). Conheça os planos superiores para continuar.`;
+  const link = document.createElement("button");
+  link.type = "button";
+  link.className = "text-button";
+  link.textContent = "Conhecer planos";
+  link.onclick = () => { window.location.hash = "#/app/billing"; };
+  node.append(message, " ", link);
+}

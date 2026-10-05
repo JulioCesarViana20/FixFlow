@@ -1,9 +1,9 @@
 export class BillingRepository {
   constructor() {
     this.plans = new Map([
-      ["free", { id: "plan_free", code: "free", name: "Free", description: "Para começar", priceCents: 0, interval: "month", limits: { clients: 20, orders: 10, equipment: 20, teamMembers: 1 }, features: ["basic_dashboard", "basic_quotes", "basic_finance"] }],
-      ["pro", { id: "plan_pro", code: "pro", name: "Pro", description: "Para empresas em crescimento", priceCents: 4999, interval: "month", limits: { clients: -1, orders: -1, equipment: -1, teamMembers: 3 }, features: ["advanced_dashboard", "advanced_quotes", "advanced_finance", "reports", "ai_assistant", "public_tracking", "automations", "custom_branding", "priority_support"] }],
-      ["business", { id: "plan_business", code: "business", name: "Business", description: "Para operações com equipe e escala", priceCents: 9999, interval: "month", limits: { clients: -1, orders: -1, equipment: -1, teamMembers: -1 }, features: ["advanced_dashboard", "advanced_quotes", "advanced_finance", "reports", "ai_assistant", "public_tracking", "automations", "custom_branding", "priority_support", "team_management", "api_access", "audit_log"] }],
+      ["free", { id: "plan_free", code: "free", name: "Free", description: "Para começar com organização", priceCents: 0, interval: "month", limits: { clients: 20, orders: 20, transactions: 20, devices: 3, teamMembers: 1 }, features: ["basic_dashboard"] }],
+      ["pro", { id: "plan_pro", code: "pro", name: "Pro", description: "Para empresas que querem crescer com mais controle", priceCents: 4999, interval: "month", limits: { clients: 100, orders: 100, transactions: 100, devices: 10, teamMembers: 3 }, features: ["basic_dashboard", "advanced_dashboard", "reports"] }],
+      ["business", { id: "plan_business", code: "business", name: "Business", description: "Para operações com equipe e escala", priceCents: 9999, interval: "month", limits: { clients: -1, orders: -1, transactions: -1, devices: -1, teamMembers: 10 }, features: ["basic_dashboard", "advanced_dashboard", "reports", "team_management", "api_access", "audit_log"] }],
     ]);
     this.subscriptions = new Map();
     this.payments = new Map();

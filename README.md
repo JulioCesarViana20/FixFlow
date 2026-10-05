@@ -49,9 +49,9 @@ The current planned structure includes:
 
 | Plan | Access                                |
 | ---- | ------------------------------------- |
-| Free | Basic features with usage limitations |
-| Pro  | Extended access to platform features  |
-| Plus | Full access to advanced features      |
+| Free     | Basic features with usage limitations |
+| Pro      | Extended access to platform features  |
+| Business | Full access to advanced features      |
 
 The architecture is designed to support additional plans and features as the product evolves.
 
@@ -286,7 +286,7 @@ View Plans
      +-----------+
      |           |
      v           v
-   Free       Pro / Plus
+   Free     Pro / Business
      |           |
      +-----+-----+
            |

@@ -12,7 +12,7 @@ export class AccountService {
     if (!membership || membership.role !== "OWNER") { const error = new Error("OWNER_REQUIRED"); error.statusCode = 403; throw error; }
     const user = this.repository.findUser(auth.userId);
     const workspace = this.repository.findWorkspace(auth.workspaceId);
-    if (!user || !workspace || workspace.status === "DELETED") { const error = new Error("WORKSPACE_NOT_FOUND"); error.statusCode = 404; throw error; }
+    if (!user || !workspace || ["DELETED", "DEACTIVATED"].includes(workspace.status)) { const error = new Error("WORKSPACE_NOT_FOUND"); error.statusCode = 404; throw error; }
     return { user, workspace, membership };
   }
 
@@ -28,7 +28,7 @@ export class AccountService {
     this.ownerContext(auth);
     const subscription = this.billingRepository.findSubscription(auth.workspaceId);
     if (!subscription) throw new Error("SUBSCRIPTION_NOT_FOUND");
-    if (subscription.gateway === "infinitepay" && !this.gateway.isConfigured()) throw new Error("PAYMENT_GATEWAY_NOT_CONFIGURED");
+    if (subscription.gateway === "mercadopago" && !this.gateway.isConfigured()) throw new Error("PAYMENT_GATEWAY_NOT_CONFIGURED");
     this.audit(auth, "SUBSCRIPTION_CANCELLATION_REQUESTED", "accepted");
     return this.subscriptionService.cancel(auth.workspaceId);
   }
@@ -41,6 +41,7 @@ export class AccountService {
 
   deactivate(auth) {
     const { workspace } = this.ownerContext(auth);
+    if (workspace.status === "DEACTIVATED") throw new Error("ACCOUNT_ALREADY_DEACTIVATED");
     workspace.status = "DEACTIVATED";
     workspace.updatedAt = new Date().toISOString();
     this.audit(auth, "ACCOUNT_DEACTIVATED", "accepted");
@@ -53,7 +54,7 @@ export class AccountService {
     if (!password || !(await this.verifyPassword(password, user.passwordHash))) throw new Error("REAUTHENTICATION_FAILED");
     if (workspace.status === "DELETION_PROCESSING") throw new Error("DELETION_IN_PROGRESS");
     const subscription = this.billingRepository.findSubscription(auth.workspaceId);
-    if (subscription && subscription.gateway === "infinitepay" && !this.gateway.isConfigured()) throw new Error("PAYMENT_GATEWAY_NOT_CONFIGURED");
+    if (subscription && subscription.gateway === "mercadopago" && !this.gateway.isConfigured()) throw new Error("PAYMENT_GATEWAY_NOT_CONFIGURED");
     workspace.status = "DELETION_PROCESSING";
     this.audit(auth, "ACCOUNT_DELETION_REQUESTED", "accepted");
     this.billingRepository.deleteWorkspace(auth.workspaceId);

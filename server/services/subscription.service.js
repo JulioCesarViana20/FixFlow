@@ -9,7 +9,7 @@ export class SubscriptionService {
 
   getAccess(workspaceId, feature) {
     const subscription = this.repository.findSubscription(workspaceId);
-    const active = subscription && ["trialing", "active"].includes(subscription.status);
+    const active = subscription && ["trialing", "active", "cancel_at_period_end"].includes(subscription.status);
     const plan = active ? subscription.plan : this.getPlan("free");
     if (!active) return plan.features.includes(feature);
     if (subscription.currentPeriodEnd && new Date(subscription.currentPeriodEnd) < new Date()) return false;
@@ -27,6 +27,12 @@ export class SubscriptionService {
     return limit === undefined || limit === -1 || Number(currentCount) < limit;
   }
 
+  getLimit(workspaceId, resource) {
+    const subscription = this.repository.findSubscription(workspaceId);
+    const plan = subscription && ["trialing", "active"].includes(subscription.status) ? subscription.plan : this.getPlan("free");
+    return plan.limits?.[resource];
+  }
+
   expireIfNeeded(workspaceId, now = new Date()) {
     const subscription = this.repository.findSubscription(workspaceId);
     if (!subscription || !subscription.currentPeriodEnd) return null;
@@ -39,8 +45,14 @@ export class SubscriptionService {
   cancel(workspaceId, now = new Date()) {
     const subscription = this.repository.findSubscription(workspaceId);
     if (!subscription) throw new Error("SUBSCRIPTION_NOT_FOUND");
-    subscription.status = "canceled";
+    if (!subscription.currentPeriodEnd || new Date(subscription.currentPeriodEnd) <= now) {
+      subscription.status = "expired";
+      subscription.updatedAt = now.toISOString();
+      return this.repository.saveSubscription(subscription);
+    }
+    subscription.status = "cancel_at_period_end";
     subscription.canceledAt = now.toISOString();
+    subscription.autoRenew = false;
     subscription.updatedAt = now.toISOString();
     return this.repository.saveSubscription(subscription);
   }

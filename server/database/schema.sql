@@ -20,7 +20,7 @@ CREATE TABLE subscriptions (
   user_id UUID NOT NULL,
   plan_id UUID NOT NULL REFERENCES plans(id),
   status TEXT NOT NULL CHECK (status IN ('trialing', 'active', 'past_due', 'canceled', 'expired')),
-  gateway TEXT NOT NULL DEFAULT 'infinitepay',
+  gateway TEXT NOT NULL DEFAULT 'mercadopago',
   gateway_subscription_id TEXT UNIQUE,
   current_period_start TIMESTAMPTZ,
   current_period_end TIMESTAMPTZ,
@@ -39,7 +39,7 @@ CREATE TABLE payments (
   user_id UUID NOT NULL,
   subscription_id UUID NOT NULL REFERENCES subscriptions(id),
   plan_id UUID NOT NULL REFERENCES plans(id),
-  gateway TEXT NOT NULL DEFAULT 'infinitepay',
+  gateway TEXT NOT NULL DEFAULT 'mercadopago',
   order_nsu TEXT NOT NULL UNIQUE,
   transaction_nsu TEXT UNIQUE,
   amount_cents INTEGER NOT NULL CHECK (amount_cents >= 0),
@@ -103,7 +103,7 @@ CREATE TABLE audit_logs (
 
 INSERT INTO plans (code, name, description, price_cents, billing_interval, limits, features)
 VALUES
-  ('free', 'Free', 'Para começar', 0, 'month', '{"clients": 20, "orders": 10, "equipment": 20}', '["basic_dashboard"]'),
-  ('pro', 'Pro', 'Para empresas em crescimento', 4999, 'month', '{"clients": -1, "orders": -1, "equipment": -1, "teamMembers": 3}', '["advanced_dashboard", "advanced_quotes", "advanced_finance", "reports", "ai_assistant", "public_tracking", "automations", "custom_branding", "priority_support"]'),
-  ('business', 'Business', 'Para operações com equipe e escala', 9999, 'month', '{"clients": -1, "orders": -1, "equipment": -1, "teamMembers": -1}', '["advanced_dashboard", "advanced_quotes", "advanced_finance", "reports", "ai_assistant", "public_tracking", "automations", "custom_branding", "priority_support", "team_management", "api_access", "audit_log"]')
+  ('free', 'Free', 'Para começar com organização', 0, 'month', '{"clients": 20, "orders": 20, "transactions": 20, "devices": 3, "teamMembers": 1}', '["basic_dashboard"]'),
+  ('pro', 'Pro', 'Para empresas que querem crescer com mais controle', 4999, 'month', '{"clients": 100, "orders": 100, "transactions": 100, "devices": 10, "teamMembers": 3}', '["basic_dashboard", "advanced_dashboard", "reports"]'),
+  ('business', 'Business', 'Para operações com equipe e escala', 9999, 'month', '{"clients": -1, "orders": -1, "transactions": -1, "devices": -1, "teamMembers": 10}', '["basic_dashboard", "advanced_dashboard", "reports", "team_management", "api_access", "audit_log"]')
 ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description, price_cents = EXCLUDED.price_cents, billing_interval = EXCLUDED.billing_interval, limits = EXCLUDED.limits, features = EXCLUDED.features, active = TRUE, updated_at = now();

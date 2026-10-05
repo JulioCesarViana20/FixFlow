@@ -41,3 +41,11 @@ test("exclusão exige confirmação textual e senha atual", async () => {
   assert.equal(result.status, "DELETED");
   assert.equal(context.repository.findWorkspace(context.account.workspaceId), undefined);
 });
+
+test("desativação bloqueia novas operações do workspace", async () => {
+  const context = await setup();
+  const auth = { userId: context.account.userId, workspaceId: context.account.workspaceId };
+  assert.deepEqual(context.accountService.deactivate(auth), { status: "DEACTIVATED" });
+  assert.throws(() => context.accountService.exportData(auth), /WORKSPACE_NOT_FOUND/);
+  assert.throws(() => context.accountService.deactivate(auth), /WORKSPACE_NOT_FOUND/);
+});

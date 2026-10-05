@@ -20,7 +20,9 @@ export function createBillingController(paymentService, repository, gateway, sub
     },
     async webhook(request) {
       const payload = await request.json();
-      return paymentService.verifyAndHandleWebhook(payload, gateway.verifyWebhook(request, payload));
+      const verified = gateway.verifyWebhook(request, payload);
+      if (!verified) return paymentService.verifyAndHandleWebhook(payload, false);
+      return paymentService.verifyAndHandleWebhook(await gateway.normalizeWebhook(payload, request.headers["x-request-id"]), true);
     },
   };
 }

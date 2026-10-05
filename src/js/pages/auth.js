@@ -2,10 +2,11 @@ import { createAccount, getState, saveState, signIn } from "../core/store.js";
 import { navigate } from "../core/router.js";
 import { hydrateIcons, icon } from "../components/ui.js";
 import { validateEmail } from "../utils/validation.js";
+import { API_URL } from "../config/api.js";
 
 export function authPage(type) {
   const signup = type === "signup";
-  return `<div class="auth-page"><button class="back-public" data-route="/">${icon("arrow-left")} Voltar ao FixFlow</button><div class="auth-card"><div class="brand auth-brand"><span class="brand-mark"><img src="fixflow.jpg" alt="FixFlow"></span><span>FixFlow</span></div><p class="eyebrow">${signup ? "Comece agora" : "Bem-vindo de volta"}</p><h1>${signup ? "Crie sua conta" : "Entrar no FixFlow"}</h1><p class="auth-subtitle">${signup ? "Organize a operação da sua empresa com mais clareza." : "Acesse o workspace da sua empresa."}</p><form id="auth-form"><label>Email<input name="email" type="email" required autocomplete="email" placeholder="voce@empresa.com"></label><label>Senha<input name="password" type="password" minlength="8" required autocomplete="${signup ? "new-password" : "current-password"}" placeholder="Mínimo de 8 caracteres"></label>${signup ? '<label>Nome do responsável<input name="name" required autocomplete="name" placeholder="Seu nome"></label><label>Confirme sua senha<input name="confirmation" type="password" minlength="8" required autocomplete="new-password" placeholder="Repita sua senha"></label><label class="legal-consent"><input name="legalAcceptance" type="checkbox"> <span>Li e concordo com a <a href="#/privacidade" target="_blank" rel="noopener">Política de Privacidade</a> e os <a href="#/termos" target="_blank" rel="noopener">Termos de Uso</a> do FixFlow.</span></label>' : ""}<button class="primary-button" type="submit" ${signup ? "disabled" : ""}>${signup ? "Criar minha conta" : "Entrar"} ${icon("arrow-right")}</button></form>${!signup ? '<button class="forgot-password" data-route="/recuperar-senha">Esqueci minha senha</button>' : ""}<p class="auth-switch">${signup ? "Já possui uma conta?" : "Ainda não possui conta?"} <button data-route="/${signup ? "login" : "cadastro"}">${signup ? "Entrar" : "Criar conta grátis"}</button></p></div></div>`;
+  return `<div class="auth-page"><button class="back-public" data-route="/">${icon("arrow-left")} Voltar ao FixFlow</button><div class="auth-card"><div class="brand auth-brand"><span class="brand-mark"><img src="fixflow.jpg" alt="FixFlow"></span><span>FixFlow</span></div><p class="eyebrow">${signup ? "Comece agora" : "Bem-vindo de volta"}</p><h1>${signup ? "Crie sua conta" : "Entrar no FixFlow"}</h1><p class="auth-subtitle">${signup ? "Organize a operação da sua empresa com mais clareza." : "Acesse o workspace da sua empresa."}</p><form id="auth-form"><label>Email<input name="email" type="email" required autocomplete="email" placeholder="voce@empresa.com"></label><label>Senha<input name="password" type="password" minlength="8" required autocomplete="${signup ? "new-password" : "current-password"}" placeholder="Mínimo de 8 caracteres"></label>${signup ? '<label>Nome do responsável<input name="name" required autocomplete="name" placeholder="Seu nome"></label><label>Confirme sua senha<input name="confirmation" type="password" minlength="8" required autocomplete="new-password" placeholder="Repita sua senha"></label><label class="legal-consent"><input name="legalAcceptance" type="checkbox" required> <span>Li e concordo com a <a href="#/privacidade" target="_blank" rel="noopener">Política de Privacidade</a> e os <a href="#/termos" target="_blank" rel="noopener">Termos de Uso</a> do FixFlow.</span></label>' : ""}<button class="primary-button" type="submit" ${signup ? "disabled" : ""}>${signup ? "Criar minha conta" : "Entrar"} ${icon("arrow-right")}</button></form>${!signup ? '<button class="forgot-password" data-route="/recuperar-senha">Esqueci minha senha</button>' : ""}<p class="auth-switch">${signup ? "Já possui uma conta?" : "Ainda não possui conta?"} <button data-route="/${signup ? "login" : "cadastro"}">${signup ? "Entrar" : "Criar conta grátis"}</button></p></div></div>`;
 }
 
 export function bindAuth(type) {
@@ -23,9 +24,13 @@ export function bindAuth(type) {
   });
   const consent = document.querySelector("[name=legalAcceptance]");
   const submit = document.querySelector("#auth-form button[type=submit]");
+  submit.dataset.defaultLabel = submit.innerHTML;
   consent?.addEventListener("change", () => { submit.disabled = !consent.checked; });
   document.querySelector("#auth-form").onsubmit = async (event) => {
     event.preventDefault();
+    if (submit.disabled) return;
+    submit.disabled = true;
+    submit.textContent = "Processando...";
     const form = new FormData(event.currentTarget);
     const emailValidation = validateEmail(form.get("email"));
     const password = String(form.get("password"));
@@ -57,7 +62,7 @@ export function bindAuth(type) {
 async function registerAccount({ name, email, password }) {
   let response;
   try {
-    response = await fetch("http://localhost:3333/api/auth/register", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, email, password, acceptance: { privacyPolicy: { accepted: true, version: "1.0" }, termsOfUse: { accepted: true, version: "1.0" } } }) });
+    response = await fetch(`${API_URL}/api/auth/register`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, email, password, acceptance: { privacyPolicy: { accepted: true, version: "1.0" }, termsOfUse: { accepted: true, version: "1.0" } } }) });
   } catch {
     throw new Error("AUTH_API_UNAVAILABLE");
   }
@@ -68,6 +73,9 @@ async function registerAccount({ name, email, password }) {
 
 function showFormError(message) {
   const form = document.querySelector("#auth-form");
+  const submit = form.querySelector("button[type=submit]");
+  submit.disabled = false;
+  submit.innerHTML = submit.dataset.defaultLabel || "Continuar";
   let error = form.querySelector(".form-error");
   if (!error) {
     error = document.createElement("p");
