@@ -21,98 +21,102 @@ import { checkoutPage, bindCheckout, checkoutStatePage, bindCheckoutState } from
 import { privacyPage, termsPage, bindLegal } from "./pages/legal.js";
 import { settingsPage, bindSettings } from "./pages/settings.js";
 
-const app = document.querySelector("#app");
+if (typeof window === "undefined" || typeof document === "undefined") {
+  console.warn("FixFlow app skipped: browser runtime not available.");
+} else {
+  const app = document.querySelector("#app");
 
-if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
-  window.fixflowDevPlans = {
-    set(planCode) {
-      setDevelopmentPlan(planCode);
-      window.location.reload();
-    },
-    reset() {
-      resetDevelopmentPlan();
-      window.location.reload();
-    },
-    setSubscription(status, planCode = "pro", periodEnd = "") {
-      setDevelopmentSubscription(planCode, status, periodEnd);
-      window.location.reload();
-    },
-    statuses: SUBSCRIPTION_STATUSES,
-  };
-}
-
-// Cada rota decide sua tela e seus eventos; o shell continua compartilhado.
-registerRoute("/", () => renderPublic(landingPage(), bindLanding));
-registerRoute("/privacidade", () => renderPublic(privacyPage(), bindLegal));
-registerRoute("/termos", () => renderPublic(termsPage(), bindLegal));
-registerRoute("/planos/pro", () => renderPublic(proComparisonPage(), bindProComparison));
-registerRoute("/login", () => renderPublic(authPage("login"), () => bindAuth("login")));
-registerRoute("/cadastro", () => renderPublic(authPage("signup"), () => bindAuth("signup")));
-registerRoute("/recuperar-senha", () => renderPublic(recoveryPage(), bindRecovery));
-registerRoute("/onboarding", () => renderPrivate(onboardingPage(), bindOnboarding, false));
-registerRoute("/app/dashboard", () => renderPrivate(dashboardPage(), bindDashboard));
-registerRoute("/app/orders", () => renderPrivate(ordersPage(), bindOrderCards));
-registerRoute("/app/clients", () => renderPrivate(clientsPage(), bindClients));
-registerRoute("/app/client", () => renderPrivate(clientAreaPage()));
-registerRoute("/app/billing", () => renderPrivate(billingPage(), bindBilling));
-registerRoute("/checkout/pro", () => renderPublic(checkoutPage("pro"), () => bindCheckout("pro")));
-registerRoute("/checkout/business", () => renderPublic(checkoutPage("business"), () => bindCheckout("business")));
-registerRoute("/checkout/sucesso", () => renderPublic(checkoutStatePage("success"), () => bindCheckoutState("success")));
-registerRoute("/checkout/pendente", () => renderPublic(checkoutStatePage("pending"), () => bindCheckoutState("pending")));
-registerRoute("/checkout/falhou", () => renderPublic(checkoutStatePage("failed"), () => bindCheckoutState("failed")));
-registerRoute("/app/history", () => renderPrivate(historyPage(), bindHistory));
-registerRoute("/app/finance", () => renderPrivate(financePage(), bindFinance));
-registerRoute("/app/reports", () => renderPrivate(reportsPage(), bindReports));
-registerRoute("/app/settings", () => renderPrivate(settingsPage(), bindSettings));
-registerRoute("/404", () => renderPublic(placeholderPage("Página não encontrada", "O endereço acessado não existe.")));
-
-function renderPublic(content, bind) {
-  applyTheme();
-  document.body.classList.add("public-mode");
-  setPageTitle(currentPath());
-  document.querySelector(".sidebar").style.display = "none";
-  document.querySelector(".topbar").style.display = "none";
-  app.innerHTML = content;
-  hydrateIcons();
-  bind?.();
-}
-
-function renderPrivate(content, bind, requireWorkspace = true) {
-  applyTheme();
-  if (!requireWorkspace) {
-    renderPublic(content, bind);
-    return;
+  if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+    window.fixflowDevPlans = {
+      set(planCode) {
+        setDevelopmentPlan(planCode);
+        window.location.reload();
+      },
+      reset() {
+        resetDevelopmentPlan();
+        window.location.reload();
+      },
+      setSubscription(status, planCode = "pro", periodEnd = "") {
+        setDevelopmentSubscription(planCode, status, periodEnd);
+        window.location.reload();
+      },
+      statuses: SUBSCRIPTION_STATUSES,
+    };
   }
-  if (requireWorkspace && !isAuthenticated()) {
-    navigate("/login", true);
-    return;
+
+  // Cada rota decide sua tela e seus eventos; o shell continua compartilhado.
+  registerRoute("/", () => renderPublic(landingPage(), bindLanding));
+  registerRoute("/privacidade", () => renderPublic(privacyPage(), bindLegal));
+  registerRoute("/termos", () => renderPublic(termsPage(), bindLegal));
+  registerRoute("/planos/pro", () => renderPublic(proComparisonPage(), bindProComparison));
+  registerRoute("/login", () => renderPublic(authPage("login"), () => bindAuth("login")));
+  registerRoute("/cadastro", () => renderPublic(authPage("signup"), () => bindAuth("signup")));
+  registerRoute("/recuperar-senha", () => renderPublic(recoveryPage(), bindRecovery));
+  registerRoute("/onboarding", () => renderPrivate(onboardingPage(), bindOnboarding, false));
+  registerRoute("/app/dashboard", () => renderPrivate(dashboardPage(), bindDashboard));
+  registerRoute("/app/orders", () => renderPrivate(ordersPage(), bindOrderCards));
+  registerRoute("/app/clients", () => renderPrivate(clientsPage(), bindClients));
+  registerRoute("/app/client", () => renderPrivate(clientAreaPage()));
+  registerRoute("/app/billing", () => renderPrivate(billingPage(), bindBilling));
+  registerRoute("/checkout/pro", () => renderPublic(checkoutPage("pro"), () => bindCheckout("pro")));
+  registerRoute("/checkout/business", () => renderPublic(checkoutPage("business"), () => bindCheckout("business")));
+  registerRoute("/checkout/sucesso", () => renderPublic(checkoutStatePage("success"), () => bindCheckoutState("success")));
+  registerRoute("/checkout/pendente", () => renderPublic(checkoutStatePage("pending"), () => bindCheckoutState("pending")));
+  registerRoute("/checkout/falhou", () => renderPublic(checkoutStatePage("failed"), () => bindCheckoutState("failed")));
+  registerRoute("/app/history", () => renderPrivate(historyPage(), bindHistory));
+  registerRoute("/app/finance", () => renderPrivate(financePage(), bindFinance));
+  registerRoute("/app/reports", () => renderPrivate(reportsPage(), bindReports));
+  registerRoute("/app/settings", () => renderPrivate(settingsPage(), bindSettings));
+  registerRoute("/404", () => renderPublic(placeholderPage("Página não encontrada", "O endereço acessado não existe.")));
+
+  function renderPublic(content, bind) {
+    applyTheme();
+    document.body.classList.add("public-mode");
+    setPageTitle(currentPath());
+    document.querySelector(".sidebar").style.display = "none";
+    document.querySelector(".topbar").style.display = "none";
+    app.innerHTML = content;
+    hydrateIcons();
+    bind?.();
   }
-  mountShell(currentPath().replace("/app/", ""));
-  setPageTitle(currentPath());
-  app.innerHTML = content;
-  hydrateIcons();
-  bind?.();
-}
 
-function setPageTitle(path) {
-  const titles = {
-    "/": "Organize seus fluxos de trabalho",
-    "/login": "Entrar",
-    "/cadastro": "Criar conta",
-    "/privacidade": "Política de Privacidade",
-    "/termos": "Termos de Uso",
-    "/app/dashboard": "Dashboard",
-    "/app/orders": "Demandas",
-    "/app/clients": "Clientes",
-    "/app/finance": "Financeiro",
-    "/app/billing": "Assinatura e cobrança",
-    "/app/history": "Histórico",
-    "/app/reports": "Relatórios",
-    "/app/settings": "Configurações",
-    "/app/client": "Área do cliente",
-  };
-  const label = titles[path] || "FixFlow";
-  document.title = path.startsWith("/app/") ? `FixFlow — ${label}` : `FixFlow — ${label}`;
-}
+  function renderPrivate(content, bind, requireWorkspace = true) {
+    applyTheme();
+    if (!requireWorkspace) {
+      renderPublic(content, bind);
+      return;
+    }
+    if (requireWorkspace && !isAuthenticated()) {
+      navigate("/login", true);
+      return;
+    }
+    mountShell(currentPath().replace("/app/", ""));
+    setPageTitle(currentPath());
+    app.innerHTML = content;
+    hydrateIcons();
+    bind?.();
+  }
 
-startRouter();
+  function setPageTitle(path) {
+    const titles = {
+      "/": "Organize seus fluxos de trabalho",
+      "/login": "Entrar",
+      "/cadastro": "Criar conta",
+      "/privacidade": "Política de Privacidade",
+      "/termos": "Termos de Uso",
+      "/app/dashboard": "Dashboard",
+      "/app/orders": "Demandas",
+      "/app/clients": "Clientes",
+      "/app/finance": "Financeiro",
+      "/app/billing": "Assinatura e cobrança",
+      "/app/history": "Histórico",
+      "/app/reports": "Relatórios",
+      "/app/settings": "Configurações",
+      "/app/client": "Área do cliente",
+    };
+    const label = titles[path] || "FixFlow";
+    document.title = path.startsWith("/app/") ? `FixFlow — ${label}` : `FixFlow — ${label}`;
+  }
+
+  startRouter();
+}
