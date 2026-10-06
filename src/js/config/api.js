@@ -7,23 +7,18 @@ function resolveConfiguredApiUrl() {
   const runtimeGlobal = normalizeUrl(globalThis.__FIXFLOW_API_URL__);
   if (runtimeGlobal) return runtimeGlobal;
 
-  const documentRef = typeof document !== "undefined" ? document : null;
-  const metaTag = documentRef?.querySelector?.('meta[name="fixflow-api-url"]');
-  const metaValue = normalizeUrl(metaTag?.content);
-  if (metaValue) return metaValue;
+  const envValue = normalizeUrl(typeof process !== "undefined" ? process.env?.FIXFLOW_API_URL : "");
+  if (envValue) return envValue;
 
-  const localStorageRef = typeof globalThis.localStorage !== "undefined" ? globalThis.localStorage : null;
-  const localStorageValue = normalizeUrl(localStorageRef?.getItem?.("FIXFLOW_API_URL"));
-  if (localStorageValue) return localStorageValue;
+  if (typeof window !== "undefined") {
+    const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    if (isLocalHost) {
+      return `${window.location.protocol}//${window.location.hostname}:3000`;
+    }
+    return window.location.origin;
+  }
 
-  return "";
+  return "http://localhost:3000";
 }
 
-const configuredApiUrl = resolveConfiguredApiUrl();
-const windowRef = typeof window !== "undefined" ? window : null;
-const isLocalHost = !!windowRef && (windowRef.location.hostname === "localhost" || windowRef.location.hostname === "127.0.0.1");
-
-export const API_URL = configuredApiUrl
-  || (isLocalHost
-    ? `${windowRef.location.protocol}//${windowRef.location.hostname}:3000`
-    : windowRef?.location?.origin || "");
+export const API_URL = resolveConfiguredApiUrl();

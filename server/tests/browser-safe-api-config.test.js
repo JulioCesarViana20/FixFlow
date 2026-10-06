@@ -16,7 +16,7 @@ test("configuração da API não quebra em runtime sem navegador", async () => {
 
   try {
     const { API_URL } = await import(new URL("../../src/js/config/api.js?browser-safe", import.meta.url));
-    assert.equal(API_URL, "");
+    assert.equal(API_URL, "http://localhost:3000");
   } finally {
     Object.assign(globalThis, originalValues);
   }
