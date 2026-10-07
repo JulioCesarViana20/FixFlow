@@ -25,7 +25,7 @@ export function dashboardPage(period = "all") {
     "Visão geral",
     `${getTimeGreeting()}, ${workspace.owner} 👋`,
     "Sua operação começa aqui.",
-    `${primaryButton("Nova demanda", "new-order")}<select id="dashboard-period" aria-label="Período"><option value="all" ${period === "all" ? "selected" : ""}>Todo o período</option><option value="today" ${period === "today" ? "selected" : ""}>Hoje</option><option value="7" ${period === "7" ? "selected" : ""}>Últimos 7 dias</option><option value="30" ${period === "30" ? "selected" : ""}>Últimos 30 dias</option><option value="month" ${period === "month" ? "selected" : ""}>Este mês</option></select>`,
+    `${primaryButton("Nova demanda", "new-order")}<select id="dashboard-period" class="dashboard-period-select" aria-label="Período dos indicadores"><option value="all" ${period === "all" ? "selected" : ""}>Todo o período</option><option value="today" ${period === "today" ? "selected" : ""}>Hoje</option><option value="7" ${period === "7" ? "selected" : ""}>Últimos 7 dias</option><option value="30" ${period === "30" ? "selected" : ""}>Últimos 30 dias</option><option value="month" ${period === "month" ? "selected" : ""}>Este mês</option></select>`,
   )}<div class="metric-grid">${stats.map(statCard).join("")}</div>${advancedPanel}${
     orders.length
       ? recentOrders(orders)

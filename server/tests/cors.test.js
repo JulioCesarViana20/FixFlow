@@ -58,3 +58,20 @@ test("adiciona cabeçalho CORS nas requisições permitidas", () => {
   assert.equal(result.headers["access-control-allow-origin"], "http://localhost:4173");
   assert.equal(called, true);
 });
+
+test("permite origens locais adicionais em desenvolvimento", () => {
+  const result = response();
+  let called = false;
+
+  createCorsMiddleware({
+    allowedOrigin: "https://fixflow.onrender.com",
+    allowedOrigins: ["http://localhost:4173"],
+  })(
+    request("POST", "http://localhost:4173"),
+    result,
+    () => { called = true; },
+  );
+
+  assert.equal(result.headers["access-control-allow-origin"], "http://localhost:4173");
+  assert.equal(called, true);
+});

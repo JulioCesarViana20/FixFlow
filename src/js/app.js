@@ -1,20 +1,20 @@
 import { currentPath, navigate, registerRoute, startRouter } from "./core/router.js";
 import { applyTheme, isAuthenticated, resetDevelopmentPlan, setDevelopmentPlan, setDevelopmentSubscription } from "./core/store.js";
 import { SUBSCRIPTION_STATUSES } from "./config/plans.js";
-import { mountShell } from "./components/shell.js";
+import { mountShell } from "./components/shell.js?v=ai1";
 import { hydrateIcons } from "./components/ui.js";
-import { landingPage, bindLanding } from "./pages/landing.js";
+import { landingPage, bindLanding } from "./pages/landing.js?v=faq3";
 import { authPage, bindAuth } from "./pages/auth.js";
 import { recoveryPage, bindRecovery } from "./pages/recovery.js";
 import { onboardingPage, bindOnboarding } from "./pages/onboarding.js";
-import { dashboardPage, bindDashboard } from "./pages/dashboard.js";
+import { dashboardPage, bindDashboard } from "./pages/dashboard.js?v=period1";
 import { ordersPage, bindOrderCards } from "./pages/orders.js";
 import { clientsPage, bindClients } from "./pages/clients.js";
 import { financePage, bindFinance } from "./pages/finance.js";
 import { reportsPage, bindReports } from "./pages/reports.js";
 import { historyPage, bindHistory } from "./pages/history.js";
 import { clientAreaPage } from "./pages/client-area.js";
-import { placeholderPage } from "./pages/placeholder.js";
+import { placeholderPage, comingSoonPage } from "./pages/placeholder.js?v=ai1";
 import { billingPage, bindBilling } from "./pages/billing.js";
 import { proComparisonPage, bindProComparison } from "./pages/pro-comparison.js";
 import { checkoutPage, bindCheckout, checkoutStatePage, bindCheckoutState } from "./pages/checkout.js";
@@ -67,6 +67,7 @@ if (typeof window === "undefined" || typeof document === "undefined") {
   registerRoute("/app/finance", () => renderPrivate(financePage(), bindFinance));
   registerRoute("/app/reports", () => renderPrivate(reportsPage(), bindReports));
   registerRoute("/app/settings", () => renderPrivate(settingsPage(), bindSettings));
+  registerRoute("/app/ai", () => renderPrivate(comingSoonPage("Flow IA", "Uma nova forma de pensar junto com os dados do seu workspace.")));
   registerRoute("/404", () => renderPublic(placeholderPage("Página não encontrada", "O endereço acessado não existe.")));
 
   function renderPublic(content, bind) {
@@ -99,7 +100,7 @@ if (typeof window === "undefined" || typeof document === "undefined") {
 
   function setPageTitle(path) {
     const titles = {
-      "/": "Organize seus fluxos de trabalho",
+      "/": "Organize suas ideias em um só lugar",
       "/login": "Entrar",
       "/cadastro": "Criar conta",
       "/privacidade": "Política de Privacidade",

@@ -2,6 +2,15 @@ import { navigate } from "../core/router.js";
 import { hydrateIcons, icon } from "../components/ui.js";
 import { PLAN_CATALOG, planPrice } from "../config/plans.js";
 
+const landingFaqAnswers = [
+  "O FixFlow é uma plataforma online para organizar demandas, clientes, tarefas, responsáveis e informações financeiras da sua empresa em um único workspace.",
+  "Não. O FixFlow funciona pelo navegador, sem instalação. Basta acessar a plataforma, criar sua conta e configurar o workspace da empresa.",
+  "Sim. O plano Free permite começar sem cartão de crédito, com limites para demandas, clientes, registros financeiros e dispositivos. Você pode fazer upgrade quando precisar.",
+  "A conta do proprietário é suficiente para começar. Conforme a operação crescer, os planos superiores permitem organizar equipe, permissões e recursos compartilhados no workspace.",
+  "Você cadastra uma demanda, relaciona o cliente, define prazo, responsável, prioridade e status. Depois acompanha o andamento, atualiza as etapas e mantém o histórico organizado.",
+  "O FixFlow oferece os planos Free, Pro e Business. O Free atende operações iniciais; o Pro amplia limites e indicadores; o Business adiciona escala, equipe, API e auditoria. A assinatura paga só é ativada após a confirmação do pagamento pelo backend.",
+];
+
 export function landingPage() {
   const pro = PLAN_CATALOG.pro;
   return `<div class="public-page"><header class="public-header"><div class="brand"><span class="brand-mark"><img src="fixflow.jpg" alt="FixFlow"></span><span>FixFlow</span></div><nav><a href="#features">Produto</a><a href="#features">Recursos</a><a href="#pricing">Preços</a><a href="#faq">FAQ</a></nav><div class="public-actions"><button class="secondary-button" data-route="/planos/pro">Conhecer Pro</button><button class="primary-button" data-route="/cadastro">Começar gratuitamente ${icon("arrow-right")}</button></div></header><section class="landing-hero public-hero landing-hero-premium"><div class="hero-depth" aria-hidden="true"><span class="depth-orbit orbit-one"></span><span class="depth-orbit orbit-two"></span><span class="depth-panel panel-one"></span><span class="depth-panel panel-two"></span><span class="depth-dot dot-one"></span><span class="depth-dot dot-two"></span><span class="depth-dot dot-three"></span></div><div class="hero-content"><p class="eyebrow">Clareza para o trabalho que move sua empresa</p><h1><span class="typing-line" data-typing-target>Organize seus processos em um só lugar.</span><span class="typing-cursor" aria-hidden="true"></span></h1><p class="hero-description">Clientes, tarefas, demandas, aprovações e pagamentos em um fluxo simples, profissional e adaptável ao seu negócio.</p><div class="heading-actions"><button class="primary-button" data-route="/cadastro">Começar gratuitamente ${icon("arrow-right")}</button><a class="secondary-button" href="#features">${icon("play")} Ver como funciona</a></div><div class="public-proof"><span>${icon("check-circle-2")} Sem cartão de crédito</span><span>${icon("check-circle-2")} Comece em poucos minutos</span><span>${icon("check-circle-2")} Feito para sua operação</span></div></div></section><section class="landing-section" id="features"><p class="eyebrow">Tudo conectado</p><h2>Menos ruído. Mais fluxo.</h2><p>O FixFlow organiza o trabalho da sua empresa, do primeiro contato à conclusão.</p><div class="feature-grid"><div class="feature">${icon("workflow")}<h3>Processos sob controle</h3><p>Estruture demandas, responsáveis, prioridades e cada mudança de status.</p></div><div class="feature">${icon("send")}<h3>Relacionamentos mais claros</h3><p>Compartilhe atualizações profissionais e mantenha clientes e equipes alinhados.</p></div><div class="feature">${icon("wallet-cards")}<h3>Financeiro conectado</h3><p>Saiba o que está pendente, recebido e atrasado em uma única visão.</p></div></div></section><section class="landing-section flow-section"><p class="eyebrow">Como funciona</p><h2>Da demanda concluída ao próximo passo.</h2><div class="flow-grid">${["Cadastre uma demanda", "Defina responsáveis", "Organize as etapas", "Acompanhe o andamento", "Compartilhe atualizações", "Registre a conclusão"].map((item, index) => `<div class="flow-step"><b>0${index + 1}</b><span>${item}</span></div>`).join("")}</div></section><section class="landing-section" id="pricing"><p class="eyebrow">Planos simples</p><h2>Comece no seu ritmo.</h2><div class="pricing-grid"><div class="price-card"><p class="eyebrow">FREE</p><h3>Gratuito</h3><p>Para começar a organizar sua operação.</p><button class="secondary-button" data-route="/cadastro">Começar grátis</button></div><div class="price-card featured"><p class="eyebrow">PRO</p><h3>${planPrice(pro)} <small>/mês</small></h3><p>Para empresas que querem crescer com mais controle.</p><button class="primary-button" data-route="/planos/pro">Conhecer Pro</button></div></div></section><section class="landing-section faq-section" id="faq"><p class="eyebrow">Perguntas frequentes</p><h2>Tudo claro antes de começar.</h2>${["O que é o FixFlow?", "Preciso instalar alguma coisa?", "Posso testar gratuitamente?", "Minha equipe precisa criar uma conta?", "Como funciona o acompanhamento dos fluxos?", "Como funcionam os planos?"].map((question) => `<details><summary>${question}${icon("plus")}</summary><p>O FixFlow é uma plataforma online para organizar processos, demandas e responsabilidades da sua empresa. Você pode começar gratuitamente e evoluir conforme sua operação cresce.</p></details>`).join("")}</section><footer class="public-footer"><div class="brand"><span class="brand-mark"><img src="fixflow.jpg" alt="FixFlow"></span><span>FixFlow</span></div><span>Gestão que acompanha seu trabalho.</span><a href="mailto:fixflowconsult@gmail.com">Fale conosco: fixflowconsult@gmail.com</a></footer></div>`;
@@ -9,6 +18,12 @@ export function landingPage() {
 
 export function bindLanding() {
   document.querySelectorAll("[data-route]").forEach((button) => { button.onclick = () => navigate(button.dataset.route); });
+  document.querySelectorAll(".faq-section details").forEach((detail, index) => {
+    const answer = detail.querySelector("p");
+    if (answer && landingFaqAnswers[index]) answer.textContent = landingFaqAnswers[index];
+  });
+  const heroTitle = document.querySelector("[data-typing-target]");
+  if (heroTitle) heroTitle.textContent = "Organize suas ideias em um só lugar.";
   const pricingGrid = document.querySelector(".pricing-grid");
   const business = PLAN_CATALOG.business;
   if (pricingGrid && !pricingGrid.querySelector('[data-plan="business"]')) {
@@ -27,7 +42,7 @@ function startHeroTyping() {
   const target = document.querySelector("[data-typing-target]");
   if (!target || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const phrases = [
-    "Organize seus processos em um só lugar.",
+    "Organize suas ideias em um só lugar.",
     "Tenha sua empresa sob controle.",
     "Transforme tarefas em resultados.",
     "Gerencie clientes, demandas e financeiro.",

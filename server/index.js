@@ -27,7 +27,12 @@ const paymentService = new PaymentService(repository, subscriptionService, gatew
 const controller = createBillingController(paymentService, repository, gateway, subscriptionService);
 const router = new Router();
 const requestGuard = createRequestGuard();
-const cors = createCorsMiddleware({ allowedOrigin: new URL(env.appUrl).origin });
+const cors = createCorsMiddleware({
+  allowedOrigin: new URL(env.appUrl).origin,
+  allowedOrigins: env.nodeEnv === "production"
+    ? []
+    : ["http://localhost:4173", "http://127.0.0.1:4173"],
+});
 const legalRepository = new LegalRepository();
 const consentService = new ConsentService(legalRepository);
 const authService = new AuthService(legalRepository, consentService);

@@ -14,6 +14,7 @@ const navigation = [
   { page: "finance", label: "Financeiro", icon: "hand-coins", section: "Gestão" },
   { page: "reports", label: "Relatórios", icon: "file-bar-chart", section: "Gestão" },
   { page: "settings", label: "Configurações", icon: "settings-2", section: "Gestão" },
+  { page: "ai", label: "Flow IA", icon: "sparkles", section: "Experiência" },
   { page: "client", label: "Área do cliente", icon: "external-link", section: "Experiência" },
 ];
 
@@ -25,6 +26,14 @@ export function mountShell(path) {
   document.querySelector(".topbar").style.display = "flex";
   document.querySelector(".sidebar").innerHTML = renderSidebar(workspace, user, path);
   document.querySelector(".topbar").innerHTML = renderTopbar(workspace, path, user);
+
+  if (!document.querySelector(".sidebar-backdrop")) {
+    const backdrop = document.createElement("div");
+    backdrop.className = "sidebar-backdrop";
+    backdrop.onclick = () => document.querySelector("#sidebar").classList.remove("open");
+    document.body.appendChild(backdrop);
+  }
+
   bindShellEvents();
 }
 
@@ -36,6 +45,9 @@ function bindShellEvents() {
   document.querySelector("#menuToggle").onclick = () => {
     document.querySelector("#sidebar").classList.toggle("open");
   };
+  document.querySelector("[data-sidebar-close]")?.addEventListener("click", () => {
+    document.querySelector("#sidebar").classList.remove("open");
+  });
   document.querySelector("[data-notifications]")?.addEventListener("click", (event) => {
     event.stopPropagation();
     toggleNotifications();
@@ -94,7 +106,7 @@ function renderSidebar(workspace, user, path) {
     return `${section}<button class="nav-item ${item.page === path ? "active" : ""}" data-page="${item.page}">${icon(item.icon)}<span>${item.label}</span>${count}</button>`;
   }).join("");
   const plan = getCurrentPlan(workspace);
-  return `<div class="brand"><span class="brand-mark"><img src="fixflow.jpg" alt="FixFlow"></span><span>FixFlow</span></div><div class="workspace-switcher"><span class="workspace-icon">${initials(workspace.company)}</span><span><strong>${escapeHtml(workspace.company || "Sua empresa")}</strong><small>${escapeHtml(workspace.type || "Workspace atual")} · ${plan.name}</small></span></div><nav class="main-nav" aria-label="Navegação principal">${links}<a class="nav-item" href="index.html" data-page="landing">${icon("sparkles")}<span>Site do FixFlow</span></a></nav><div class="sidebar-bottom"><div class="upgrade-card"><span class="upgrade-icon">${icon("sparkles")}</span><strong>Plano ${plan.name}</strong><p>${plan.code === "business" ? "Gestão para equipes e escala." : "Evolua sua operação com mais recursos."}</p><button class="text-button">Conheça os planos ${icon("arrow-up-right")}</button></div><div class="profile-row"><button class="profile-row-button" data-profile-settings><span class="avatar avatar-julio">${initials(user?.name)}</span><span><strong>${escapeHtml(user?.name || "Administrador")}</strong><small>Workspace atual</small></span></button><button class="icon-button" data-logout aria-label="Sair">${icon("log-out")}</button></div></div>`;
+  return `<div class="sidebar-brand"><div class="brand"><span class="brand-mark"><img src="fixflow.jpg" alt="FixFlow"></span><span>FixFlow</span></div><button class="sidebar-close" data-sidebar-close aria-label="Fechar menu">${icon("x")}</button></div><div class="workspace-switcher"><span class="workspace-icon">${initials(workspace.company)}</span><span><strong>${escapeHtml(workspace.company || "Sua empresa")}</strong><small>${escapeHtml(workspace.type || "Workspace atual")} · ${plan.name}</small></span></div><nav class="main-nav" aria-label="Navegação principal">${links}<a class="nav-item" href="index.html" data-page="landing">${icon("sparkles")}<span>Site do FixFlow</span></a></nav><div class="sidebar-bottom"><div class="upgrade-card"><span class="upgrade-icon">${icon("sparkles")}</span><strong>Plano ${plan.name}</strong><p>${plan.code === "business" ? "Gestão para equipes e escala." : "Evolua sua operação com mais recursos."}</p><button class="text-button">Conheça os planos ${icon("arrow-up-right")}</button></div><div class="profile-row"><button class="profile-row-button" data-profile-settings><span class="avatar avatar-julio">${initials(user?.name)}</span><span><strong>${escapeHtml(user?.name || "Administrador")}</strong><small>Workspace atual</small></span></button><button class="icon-button" data-logout aria-label="Sair">${icon("log-out")}</button></div></div>`;
 }
 
 function renderTopbar(workspace, path, user) {
