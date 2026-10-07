@@ -15,6 +15,10 @@ function resolveConfiguredApiUrl() {
     if (isLocalHost) {
       return `${window.location.protocol}//${window.location.hostname}:3000`;
     }
+
+    const metaApiUrl = normalizeUrl(document.querySelector('meta[name="fixflow-api-url"]')?.content);
+    if (metaApiUrl) return metaApiUrl;
+
     return window.location.origin;
   }
 
