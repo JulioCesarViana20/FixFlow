@@ -19,6 +19,7 @@ export class AuthService {
     this.repository.saveWorkspace({ id: workspaceId, ownerUserId: user.id, status: "ACTIVE", createdAt: new Date().toISOString() });
     this.repository.saveMembership({ userId: user.id, workspaceId, role: "OWNER" });
     try { this.consentService.record({ userId: user.id, workspaceId, acceptance, request }); } catch (error) { this.repository.users.delete(user.id); this.repository.deleteWorkspace(workspaceId); throw error; }
+    await this.repository.flush?.();
     return { userId: user.id, workspaceId };
   }
 }

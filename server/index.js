@@ -11,6 +11,8 @@ import { SubscriptionService } from "./services/subscription.service.js";
 import { createBillingController } from "./controllers/billing.controller.js";
 import { registerBillingRoutes } from "./routes/billing.routes.js";
 import { LegalRepository } from "./repositories/legal.repository.js";
+import { PostgresLegalRepository } from "./repositories/postgres.legal.repository.js";
+import { createDatabasePool } from "./database/client.js";
 import { ConsentService } from "./services/consent.service.js";
 import { AuthService } from "./services/auth.service.js";
 import { createAuthController } from "./controllers/auth.controller.js";
@@ -33,7 +35,9 @@ const cors = createCorsMiddleware({
     ? []
     : ["http://localhost:4173", "http://127.0.0.1:4173"],
 });
-const legalRepository = new LegalRepository();
+const databasePool = createDatabasePool();
+const legalRepository = databasePool ? new PostgresLegalRepository(databasePool) : new LegalRepository();
+await legalRepository.init?.();
 const consentService = new ConsentService(legalRepository);
 const authService = new AuthService(legalRepository, consentService);
 const authController = createAuthController(authService);
