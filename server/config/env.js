@@ -2,7 +2,14 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
+const nodeEnv = process.env.NODE_ENV || "development";
+const isProduction = nodeEnv === "production";
+
 function loadDotEnv() {
+  // No Render, as variáveis devem vir do painel do serviço. Nunca sobrescreva
+  // configuração de produção com um .env local acidentalmente publicado.
+  if (isProduction) return;
+
   const filePath = resolve(dirname(fileURLToPath(import.meta.url)), "../../.env");
 
   try {
@@ -23,32 +30,58 @@ function loadDotEnv() {
       process.env[key] = value;
     }
   } catch {
-    // `.env` is optional; production deployments can inject env vars directly.
+    // .env é opcional; produção usa as variáveis configuradas no provedor.
   }
+}
+
+function parsePort(value) {
+  const port = Number(value || 3000);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error("PORT must be a valid TCP port");
+  }
+  return port;
+}
+
+function parsePositiveNumber(value, fallback) {
+  const number = Number(value || fallback);
+  return Number.isFinite(number) && number >= 0 ? number : fallback;
 }
 
 loadDotEnv();
 
-function required(name) {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing environment variable: ${name}`);
-  return value;
-}
+export const env = Object.freeze({
+  nodeEnv,
+  isProduction,
+  port: parsePort(process.env.PORT),
+  databaseUrl: process.env.DATABASE_URL?.trim() || "",
+  appUrl: process.env.APP_URL?.trim()
+    || process.env.RENDER_EXTERNAL_URL?.trim()
+    || (isProduction ? "" : "http://localhost:4173"),
+  mercadoPagoApiUrl: process.env.MERCADO_PAGO_API_URL?.trim() || "https://api.mercadopago.com",
+  mercadoPagoAccessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN?.trim() || "",
+  mercadoPagoWebhookSecret: process.env.MERCADO_PAGO_WEBHOOK_SECRET?.trim() || "",
+  webhookToleranceDays: parsePositiveNumber(process.env.BILLING_GRACE_PERIOD_DAYS, 3),
+});
 
-export const env = {
-  port: Number(process.env.PORT || 3000),
-  nodeEnv: process.env.NODE_ENV || "development",
-  databaseUrl: process.env.DATABASE_URL || "",
-  mercadoPagoApiUrl: process.env.MERCADO_PAGO_API_URL || "https://api.mercadopago.com",
-  mercadoPagoAccessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || "",
-  mercadoPagoWebhookSecret: process.env.MERCADO_PAGO_WEBHOOK_SECRET || "",
-  appUrl: process.env.APP_URL || "http://localhost:4173",
-  webhookToleranceDays: Number(process.env.BILLING_GRACE_PERIOD_DAYS || 3),
-};
+export function validateRuntimeConfiguration() {
+  if (!env.isProduction) return;
 
-export function requireProductionSecrets() {
-  if (env.nodeEnv === "production") {
-    required("MERCADO_PAGO_ACCESS_TOKEN");
-    required("MERCADO_PAGO_WEBHOOK_SECRET");
+  if (!env.appUrl) {
+    throw new Error("APP_URL is required in production (for example: https://fixflow.onrender.com)");
+  }
+
+  let parsedAppUrl;
+  try {
+    parsedAppUrl = new URL(env.appUrl);
+  } catch {
+    throw new Error("APP_URL must be a valid absolute URL");
+  }
+
+  if (!['http:', 'https:'].includes(parsedAppUrl.protocol)) {
+    throw new Error("APP_URL must use http or https");
+  }
+
+  if (!env.mercadoPagoAccessToken || !env.mercadoPagoWebhookSecret) {
+    console.warn("Mercado Pago ainda não está configurado; checkout e webhook permanecerão indisponíveis.");
   }
 }

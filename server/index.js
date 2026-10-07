@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { env, requireProductionSecrets } from "./config/env.js";
+import { env, validateRuntimeConfiguration } from "./config/env.js";
 import { Router } from "./http/router.js";
 import { requireAuth } from "./middleware/auth.js";
 import { createRequestGuard } from "./middleware/request-guard.js";
@@ -19,7 +19,7 @@ import { AccountService } from "./services/account.service.js";
 import { createAccountController } from "./controllers/account.controller.js";
 import { registerAccountRoutes } from "./routes/account.routes.js";
 
-requireProductionSecrets();
+validateRuntimeConfiguration();
 const repository = new BillingRepository();
 const subscriptionService = new SubscriptionService(repository);
 const gateway = new MercadoPagoService();
