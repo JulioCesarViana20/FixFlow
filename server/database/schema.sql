@@ -1,6 +1,6 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TABLE plans (
+CREATE TABLE IF NOT EXISTS plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE plans (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE subscriptions (
+CREATE TABLE IF NOT EXISTS subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id UUID NOT NULL,
   user_id UUID NOT NULL,
@@ -29,11 +29,11 @@ CREATE TABLE subscriptions (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE UNIQUE INDEX one_current_subscription_per_workspace
+CREATE UNIQUE INDEX IF NOT EXISTS one_current_subscription_per_workspace
   ON subscriptions(workspace_id)
   WHERE status IN ('trialing', 'active', 'past_due');
 
-CREATE TABLE payments (
+CREATE TABLE IF NOT EXISTS payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id UUID NOT NULL,
   user_id UUID NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE payments (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE webhook_events (
+CREATE TABLE IF NOT EXISTS webhook_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   gateway TEXT NOT NULL,
   event_id TEXT NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE webhook_events (
   UNIQUE (gateway, event_id)
 );
 
-CREATE TABLE legal_acceptances (
+CREATE TABLE IF NOT EXISTS legal_acceptances (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
   workspace_id UUID,
@@ -73,10 +73,10 @@ CREATE TABLE legal_acceptances (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX legal_acceptances_user_document_idx
+CREATE INDEX IF NOT EXISTS legal_acceptances_user_document_idx
   ON legal_acceptances(user_id, document_type, document_version);
 
-CREATE TABLE workspaces (
+CREATE TABLE IF NOT EXISTS workspaces (
   id UUID PRIMARY KEY,
   owner_user_id UUID NOT NULL,
   status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'DEACTIVATED', 'DELETION_PROCESSING', 'DELETED')),
@@ -84,7 +84,7 @@ CREATE TABLE workspaces (
   updated_at TIMESTAMPTZ
 );
 
-CREATE TABLE workspace_members (
+CREATE TABLE IF NOT EXISTS workspace_members (
   user_id UUID NOT NULL,
   workspace_id UUID NOT NULL REFERENCES workspaces(id),
   role TEXT NOT NULL CHECK (role IN ('OWNER', 'ADMIN', 'MANAGER', 'TECHNICIAN')),
@@ -92,7 +92,7 @@ CREATE TABLE workspace_members (
   PRIMARY KEY (user_id, workspace_id)
 );
 
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
   workspace_id UUID,
