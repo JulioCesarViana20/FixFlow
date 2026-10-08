@@ -5,6 +5,8 @@ import { registerAuthRoutes } from "../routes/auth.routes.js";
 import { LegalRepository } from "../repositories/legal.repository.js";
 import { ConsentService } from "../services/consent.service.js";
 import { AuthService } from "../services/auth.service.js";
+import { createSessionToken } from "../services/session-token.service.js";
+import { requireAuth } from "../middleware/auth.js";
 
 function setup() {
   const repository = new LegalRepository();
@@ -99,4 +101,24 @@ test("cadastro responde com headers CORS para o frontend", async () => {
   assert.equal(response.statusCode, 200);
   assert.equal(response.headers["access-control-allow-origin"], "*");
   assert.match(String(response.headers["access-control-allow-methods"]), /POST/i);
+});
+
+test("login valida a senha e retorna um token assinado", async () => {
+  const context = setup();
+  const registered = await context.auth.register(registration());
+  const result = await context.auth.login({ email: "OWNER@EXAMPLE.COM", password: "senha-segura-123" });
+  assert.deepEqual({ userId: result.userId, workspaceId: result.workspaceId }, { userId: registered.userId, workspaceId: registered.workspaceId });
+  assert.equal(typeof result.accessToken, "string");
+  const claims = requireAuth({ headers: { authorization: `Bearer ${result.accessToken}` } });
+  assert.equal(claims.userId, result.userId);
+  assert.equal(claims.workspaceId, result.workspaceId);
+  assert.ok(claims.exp > claims.iat);
+});
+
+test("login rejeita senha inválida e token adulterado", async () => {
+  const context = setup();
+  await context.auth.register(registration());
+  await assert.rejects(() => context.auth.login({ email: "owner@example.com", password: "senha-errada" }), /INVALID_CREDENTIALS/);
+  const token = createSessionToken({ userId: "user-1", workspaceId: "workspace-1" });
+  assert.throws(() => requireAuth({ headers: { authorization: `Bearer ${token}x` } }), /UNAUTHORIZED/);
 });

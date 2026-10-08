@@ -62,10 +62,15 @@ export const env = Object.freeze({
   mercadoPagoWebhookSecret: process.env.MERCADO_PAGO_WEBHOOK_SECRET?.trim() || "",
   webhookToleranceDays: parsePositiveNumber(process.env.BILLING_GRACE_PERIOD_DAYS, 3),
   lifetimeBusinessEmail: process.env.LIFETIME_BUSINESS_EMAIL?.trim().toLowerCase() || "",
+  sessionSecret: process.env.SESSION_SECRET?.trim() || "",
 });
 
 export function validateRuntimeConfiguration() {
   if (!env.isProduction) return;
+
+  if (!env.sessionSecret || env.sessionSecret.length < 32) {
+    throw new Error("SESSION_SECRET must contain at least 32 characters in production");
+  }
 
   if (!env.appUrl) {
     throw new Error("APP_URL is required in production (for example: https://fixflow.onrender.com)");

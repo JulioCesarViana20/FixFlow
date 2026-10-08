@@ -1,4 +1,20 @@
+import { bearerToken, verifySessionToken } from "../services/session-token.service.js";
+import { env } from "../config/env.js";
+
 export function requireAuth(request) {
+  const token = bearerToken(request);
+  if (token) {
+    try { return verifySessionToken(token); } catch {
+      const error = new Error("UNAUTHORIZED");
+      error.statusCode = 401;
+      throw error;
+    }
+  }
+  if (env.isProduction) {
+    const error = new Error("UNAUTHORIZED");
+    error.statusCode = 401;
+    throw error;
+  }
   const workspaceId = request.headers["x-workspace-id"];
   const userId = request.headers["x-user-id"];
   if (!workspaceId || !userId) {

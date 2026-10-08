@@ -1,4 +1,4 @@
-import { applyTheme, deactivateLocalAccount, deleteLocalAccount, getCurrentUser, getState, getWorkspace, signOut, updatePreferences, updateWorkspace } from "../core/store.js";
+import { applyTheme, deactivateLocalAccount, deleteLocalAccount, getAuthHeaders, getCurrentUser, getWorkspace, signOut, updatePreferences, updateWorkspace } from "../core/store.js";
 import { icon, pageHeader } from "../components/ui.js";
 import { navigate } from "../core/router.js";
 import { escapeHtml } from "../utils/format.js";
@@ -42,8 +42,7 @@ export function bindSettings() {
 }
 
 function authHeaders() {
-  const session = getState().session;
-  return { "content-type": "application/json", "x-user-id": session?.userId || "", "x-workspace-id": session?.workspaceId || "" };
+  return getAuthHeaders(true);
 }
 
 function openDangerModal(action) {

@@ -1,5 +1,7 @@
 import { promisify } from "node:util";
 import { randomBytes, scrypt } from "node:crypto";
+import { timingSafeEqual } from "node:crypto";
+import { createSessionToken } from "./session-token.service.js";
 
 const deriveKey = promisify(scrypt);
 
@@ -21,6 +23,21 @@ export class AuthService {
     try { this.consentService.record({ userId: user.id, workspaceId, acceptance, request }); } catch (error) { this.repository.users.delete(user.id); this.repository.deleteWorkspace(workspaceId); throw error; }
     await this.repository.flush?.();
     await this.onUserCreated?.(user, workspaceId);
-    return { userId: user.id, workspaceId };
+    return { userId: user.id, workspaceId, accessToken: createSessionToken({ userId: user.id, workspaceId }) };
+  }
+
+  async login({ email, password }) {
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const user = this.repository.findUserByEmail(normalizedEmail);
+    if (!user || !user.passwordHash || user.status === "DEACTIVATED" || user.status === "DELETED") throw new Error("INVALID_CREDENTIALS");
+    const [salt, expectedHex] = String(user.passwordHash).split(":");
+    if (!salt || !expectedHex) throw new Error("INVALID_CREDENTIALS");
+    const derived = await deriveKey(String(password || ""), salt, 64);
+    const expected = Buffer.from(expectedHex, "hex");
+    if (expected.length !== derived.length || !timingSafeEqual(expected, derived)) throw new Error("INVALID_CREDENTIALS");
+    const workspace = [...this.repository.workspaces.values()].find((item) => item.ownerUserId === user.id && item.status !== "DEACTIVATED");
+    const membership = workspace && this.repository.findMembership(user.id, workspace.id);
+    if (!workspace || !membership) throw new Error("INVALID_CREDENTIALS");
+    return { userId: user.id, workspaceId: workspace.id, accessToken: createSessionToken({ userId: user.id, workspaceId: workspace.id }) };
   }
 }

@@ -80,7 +80,7 @@ export function getCurrentUser() {
     : null;
 }
 
-export async function createAccount({ name, email, password, userId, workspaceId }) {
+export async function createAccount({ name, email, password, userId, workspaceId, accessToken }) {
   const user = { id: userId || crypto.randomUUID(), name, email, passwordHash: await hashPassword(password) };
   workspaceId = workspaceId || crypto.randomUUID();
 
@@ -115,11 +115,16 @@ export async function createAccount({ name, email, password, userId, workspaceId
     createdAt: new Date().toISOString(),
     read: false,
   });
-  state.session = { userId: user.id, workspaceId };
+  state.session = { userId: user.id, workspaceId, accessToken: accessToken || null };
   saveState();
 }
 
-export async function signIn(email, password) {
+export async function signIn(email, password, remoteSession = null) {
+  if (remoteSession?.userId && remoteSession?.workspaceId && remoteSession?.accessToken) {
+    state.session = { userId: remoteSession.userId, workspaceId: remoteSession.workspaceId, accessToken: remoteSession.accessToken };
+    saveState();
+    return true;
+  }
   const passwordHash = await hashPassword(password);
   const user = state.users.find(
     (item) => item.email === email && item.passwordHash === passwordHash,
@@ -127,9 +132,15 @@ export async function signIn(email, password) {
 
   const workspace = user && state.workspaces[user.workspaceId];
   if (!user || user.status === "DEACTIVATED" || user.status === "DELETED" || workspace?.status === "DEACTIVATED") return false;
-  state.session = { userId: user.id, workspaceId: user.workspaceId };
+  state.session = { userId: user.id, workspaceId: user.workspaceId, accessToken: state.session?.accessToken || null };
   saveState();
   return true;
+}
+
+export function getAuthHeaders(contentType = false) {
+  const headers = contentType ? { "content-type": "application/json" } : {};
+  if (state.session?.accessToken) headers.Authorization = `Bearer ${state.session.accessToken}`;
+  return headers;
 }
 
 async function hashPassword(password) {

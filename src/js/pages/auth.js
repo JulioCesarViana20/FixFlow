@@ -43,7 +43,7 @@ export function bindAuth(type) {
       if (!form.get("legalAcceptance")) return showFormError("Para criar sua conta, você precisa ler e aceitar a Política de Privacidade e os Termos de Uso.");
       if (getState().users.some((user) => user.email === email)) return showFormError("Não foi possível concluir o cadastro. Verifique os dados.");
       registerAccount({ name: form.get("name"), email, password }).then(async (account) => {
-        await createAccount({ name: form.get("name"), email, password, userId: account.userId, workspaceId: account.workspaceId });
+        await createAccount({ name: form.get("name"), email, password, userId: account.userId, workspaceId: account.workspaceId, accessToken: account.accessToken });
         const returnTo = sessionStorage.getItem("fixflow.returnTo") || "/onboarding";
         sessionStorage.removeItem("fixflow.returnTo");
         navigate(returnTo);
@@ -51,12 +51,24 @@ export function bindAuth(type) {
       return;
     }
 
-    if (!(await signIn(email, password))) return showFormError("Não foi possível entrar. Verifique os dados informados.");
+    let account;
+    try { account = await loginAccount({ email, password }); }
+    catch (error) { return showFormError(error.message === "AUTH_API_UNAVAILABLE" ? "O serviço de login está offline. Inicie a API e tente novamente." : "Não foi possível entrar. Verifique os dados informados."); }
+    if (!(await signIn(email, password, account))) return showFormError("Não foi possível entrar. Verifique os dados informados.");
     const returnTo = sessionStorage.getItem("fixflow.returnTo") || "/app/dashboard";
     sessionStorage.removeItem("fixflow.returnTo");
     navigate(returnTo);
   };
   hydrateIcons();
+}
+
+async function loginAccount({ email, password }) {
+  let response;
+  try { response = await fetch(`${API_URL}/api/auth/login`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password }) }); }
+  catch { throw new Error("AUTH_API_UNAVAILABLE"); }
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "INVALID_CREDENTIALS");
+  return result;
 }
 
 async function registerAccount({ name, email, password }) {

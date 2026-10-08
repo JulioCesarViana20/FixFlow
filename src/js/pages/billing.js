@@ -1,4 +1,4 @@
-import { cancelSubscription, getState, getWorkspace, updatePreferences } from "../core/store.js";
+import { cancelSubscription, getAuthHeaders, getState, getWorkspace, updatePreferences } from "../core/store.js";
 import { pageHeader, icon, showToast } from "../components/ui.js";
 import { API_URL } from "../config/api.js";
 import { getCurrentPlan, getLimit, getSubscriptionStatus, getUsage, limitText } from "../core/plan-access.js";
@@ -98,7 +98,7 @@ async function startCheckout(planId) {
   }
   const session = getState().session;
   try {
-    const response = await fetch(`${API_URL}/api/billing/checkout`, { method: "POST", headers: { "content-type": "application/json", "x-user-id": session.userId, "x-workspace-id": session.workspaceId }, body: JSON.stringify({ planId }) });
+    const response = await fetch(`${API_URL}/api/billing/checkout`, { method: "POST", headers: getAuthHeaders(true), body: JSON.stringify({ planId }) });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "CHECKOUT_FAILED");
     window.location.href = result.checkoutUrl;

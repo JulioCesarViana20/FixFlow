@@ -1,5 +1,5 @@
 import { navigate } from "../core/router.js";
-import { getWorkspace, isAuthenticated } from "../core/store.js";
+import { getAuthHeaders, getWorkspace, isAuthenticated } from "../core/store.js";
 import { icon } from "../components/ui.js";
 import { PLAN_CATALOG, planPrice, intervalLabel } from "../config/plans.js";
 import { API_URL } from "../config/api.js";
@@ -29,10 +29,8 @@ export function bindProComparison() {
 
 async function refreshSubscriptionState() {
   if (!isAuthenticated()) return;
-  const session = JSON.parse(localStorage.getItem("fixflow.app.v1"))?.session;
-  if (!session) return;
   try {
-    const response = await fetch(`${API_URL}/api/billing/subscription`, { headers: { "x-user-id": session.userId, "x-workspace-id": session.workspaceId } });
+    const response = await fetch(`${API_URL}/api/billing/subscription`, { headers: getAuthHeaders() });
     const subscription = await response.json();
     const button = document.querySelector(`.plan-cta[data-plan="${subscription.plan}"]`);
     if (button && ["active", "trialing", "past_due"].includes(subscription.status)) {

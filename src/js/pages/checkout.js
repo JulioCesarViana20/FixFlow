@@ -1,4 +1,4 @@
-import { getCurrentUser, getState, getWorkspace, isAuthenticated } from "../core/store.js";
+import { getAuthHeaders, getCurrentUser, getState, getWorkspace, isAuthenticated } from "../core/store.js";
 import { navigate } from "../core/router.js";
 import { icon } from "../components/ui.js";
 import { PLAN_CATALOG, planPrice, intervalLabel } from "../config/plans.js";
@@ -19,7 +19,7 @@ async function startCheckout(planCode) {
   const button = document.querySelector("#checkout-submit"); const errorNode = document.querySelector("#checkout-error"); const session = getState().session;
   button.disabled = true; button.textContent = "Criando checkout...";
   try {
-    const response = await fetch(`${API_URL}/api/billing/checkout`, { method: "POST", headers: { "content-type": "application/json", "x-user-id": session.userId, "x-workspace-id": session.workspaceId }, body: JSON.stringify({ planId: planCode }) });
+    const response = await fetch(`${API_URL}/api/billing/checkout`, { method: "POST", headers: getAuthHeaders(true), body: JSON.stringify({ planId: planCode }) });
     const result = await response.json(); if (!response.ok) throw new Error(result.error || "CHECKOUT_FAILED");
     sessionStorage.setItem("fixflow.paymentId", result.paymentId); window.location.href = result.checkoutUrl;
   } catch (error) {
