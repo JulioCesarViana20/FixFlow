@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id UUID NOT NULL,
   user_id UUID NOT NULL,
-  subscription_id UUID NOT NULL REFERENCES subscriptions(id),
+  subscription_id UUID REFERENCES subscriptions(id),
   plan_id UUID NOT NULL REFERENCES plans(id),
   gateway TEXT NOT NULL DEFAULT 'mercadopago',
   order_nsu TEXT NOT NULL UNIQUE,

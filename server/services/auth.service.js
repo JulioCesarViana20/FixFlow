@@ -4,7 +4,7 @@ import { randomBytes, scrypt } from "node:crypto";
 const deriveKey = promisify(scrypt);
 
 export class AuthService {
-  constructor(repository, consentService) { this.repository = repository; this.consentService = consentService; }
+  constructor(repository, consentService, onUserCreated = null) { this.repository = repository; this.consentService = consentService; this.onUserCreated = onUserCreated; }
 
   async register({ name, email, password, acceptance, request }) {
     if (!name || String(name).trim().length < 2 || !email || !password || String(password).length < 8) throw new Error("INVALID_REGISTRATION");
@@ -20,6 +20,7 @@ export class AuthService {
     this.repository.saveMembership({ userId: user.id, workspaceId, role: "OWNER" });
     try { this.consentService.record({ userId: user.id, workspaceId, acceptance, request }); } catch (error) { this.repository.users.delete(user.id); this.repository.deleteWorkspace(workspaceId); throw error; }
     await this.repository.flush?.();
+    await this.onUserCreated?.(user, workspaceId);
     return { userId: user.id, workspaceId };
   }
 }

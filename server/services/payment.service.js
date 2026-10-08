@@ -1,26 +1,30 @@
 export class PaymentService {
-  constructor(repository, subscriptionService, gateway) {
+  constructor(repository, subscriptionService, gateway, couponService = null) {
     this.repository = repository;
     this.subscriptionService = subscriptionService;
     this.gateway = gateway;
+    this.couponService = couponService;
   }
 
-  async startCheckout({ workspaceId, userId, planCode }) {
+  async startCheckout({ workspaceId, userId, planCode, couponCode }) {
     const plan = this.subscriptionService.getPlan(planCode);
     if (plan.code === "free") throw new Error("FREE_PLAN_DOES_NOT_REQUIRE_CHECKOUT");
     const current = this.repository.findSubscription(workspaceId);
     if (current?.plan?.priceCents > plan.priceCents && ["trialing", "active", "cancel_at_period_end"].includes(current.status)) throw new Error("PLAN_DOWNGRADE_NOT_ALLOWED");
     if (current?.plan?.code === plan.code && ["trialing", "active", "past_due"].includes(current.status)) throw new Error("ALREADY_ON_PLAN");
+    const coupon = this.couponService?.validate(couponCode, plan) || null;
+    const amountCents = coupon?.amountCents ?? plan.priceCents;
     const existing = this.repository.listPayments(workspaceId).find((payment) => payment.planId === plan.id && payment.status === "pending");
     if (existing) return { paymentId: existing.id, orderNsu: existing.orderNsu, checkoutUrl: existing.checkoutUrl };
     const orderNsu = `fixflow_${crypto.randomUUID()}`;
     const payment = this.repository.savePayment({
       id: crypto.randomUUID(), workspaceId, userId, planId: plan.id,
-      gateway: this.gateway.name || "mercadopago", orderNsu, amountCents: plan.priceCents,
+      gateway: this.gateway.name || "mercadopago", orderNsu, amountCents,
+      couponCode: coupon?.coupon.code || null, discountCents: coupon?.discountCents || 0,
       status: "pending", createdAt: new Date().toISOString(),
     });
     try {
-      const checkout = await this.gateway.createCheckout({ orderNsu, amountCents: plan.priceCents, planCode: plan.code });
+      const checkout = await this.gateway.createCheckout({ orderNsu, amountCents, planCode: plan.code });
       payment.checkoutUrl = checkout.url;
       this.repository.savePayment(payment);
       return { paymentId: payment.id, orderNsu, checkoutUrl: checkout.url };
@@ -55,6 +59,7 @@ export class PaymentService {
     const plan = this.subscriptionService.getPlanById?.(payment.planId) || [...this.repository.plans.values()].find((item) => item.id === payment.planId);
     if (!plan) throw new Error("PLAN_NOT_FOUND");
     this.subscriptionService.activateFromPayment(payment, plan);
+    if (this.couponService && payment.couponCode) this.couponService.redeem({ coupon: this.repository.findCoupon(payment.couponCode), payment, discountCents: payment.discountCents });
     this.repository.savePayment(payment);
     const event = this.repository.findEvent(gatewayName, eventId);
     event.processed = true;

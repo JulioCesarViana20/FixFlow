@@ -1,5 +1,18 @@
 export class SubscriptionService {
-  constructor(repository) { this.repository = repository; }
+  constructor(repository, { lifetimeBusinessEmail = "" } = {}) { this.repository = repository; this.lifetimeBusinessEmail = lifetimeBusinessEmail; }
+
+  provisionLifetimeBusinessForUser(user, workspaceId) {
+    if (!this.lifetimeBusinessEmail || user.email !== this.lifetimeBusinessEmail) return null;
+    const existing = this.repository.findEntitlement(workspaceId);
+    if (existing) return existing;
+    return this.repository.saveEntitlement({ id: crypto.randomUUID(), userId: user.id, workspaceId, planCode: "business", status: "active", subscriptionType: "lifetime", expiresAt: null, grantedBy: "LIFETIME_BUSINESS_EMAIL" });
+  }
+
+  lifetimeEntitlement(workspaceId, now = new Date()) {
+    const entitlement = this.repository.findEntitlement?.(workspaceId);
+    if (!entitlement || (entitlement.expiresAt && new Date(entitlement.expiresAt) <= now)) return null;
+    return entitlement;
+  }
 
   getPlan(code) {
     const plan = this.repository.findPlan(code);
@@ -7,8 +20,12 @@ export class SubscriptionService {
     return plan;
   }
 
+  getPlanById(id) { return [...this.repository.plans.values()].find((plan) => plan.id === id); }
+
   getAccess(workspaceId, feature) {
     const subscription = this.repository.findSubscription(workspaceId);
+    const entitlement = this.lifetimeEntitlement(workspaceId);
+    if (entitlement) return this.getPlan(entitlement.planCode).features.includes(feature);
     const active = subscription && ["trialing", "active", "cancel_at_period_end"].includes(subscription.status);
     const plan = active ? subscription.plan : this.getPlan("free");
     if (!active) return plan.features.includes(feature);
@@ -21,6 +38,7 @@ export class SubscriptionService {
   }
 
   canCreate(workspaceId, resource, currentCount) {
+    if (this.lifetimeEntitlement(workspaceId)) return true;
     const subscription = this.repository.findSubscription(workspaceId);
     const plan = subscription && ["trialing", "active"].includes(subscription.status) ? subscription.plan : this.getPlan("free");
     const limit = plan.limits?.[resource];
@@ -28,6 +46,7 @@ export class SubscriptionService {
   }
 
   getLimit(workspaceId, resource) {
+    if (this.lifetimeEntitlement(workspaceId)) return this.getPlan("business").limits?.[resource];
     const subscription = this.repository.findSubscription(workspaceId);
     const plan = subscription && ["trialing", "active"].includes(subscription.status) ? subscription.plan : this.getPlan("free");
     return plan.limits?.[resource];

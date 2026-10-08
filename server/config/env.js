@@ -61,6 +61,7 @@ export const env = Object.freeze({
   mercadoPagoAccessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN?.trim() || "",
   mercadoPagoWebhookSecret: process.env.MERCADO_PAGO_WEBHOOK_SECRET?.trim() || "",
   webhookToleranceDays: parsePositiveNumber(process.env.BILLING_GRACE_PERIOD_DAYS, 3),
+  lifetimeBusinessEmail: process.env.LIFETIME_BUSINESS_EMAIL?.trim().toLowerCase() || "",
 });
 
 export function validateRuntimeConfiguration() {

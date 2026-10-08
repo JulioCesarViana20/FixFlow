@@ -7,6 +7,7 @@ import { createCorsMiddleware } from "./middleware/cors.js";
 import { BillingRepository } from "./repositories/billing.repository.js";
 import { MercadoPagoService } from "./services/mercadopago.service.js";
 import { PaymentService } from "./services/payment.service.js";
+import { CouponService } from "./services/coupon.service.js";
 import { SubscriptionService } from "./services/subscription.service.js";
 import { createBillingController } from "./controllers/billing.controller.js";
 import { registerBillingRoutes } from "./routes/billing.routes.js";
@@ -22,10 +23,13 @@ import { createAccountController } from "./controllers/account.controller.js";
 import { registerAccountRoutes } from "./routes/account.routes.js";
 
 validateRuntimeConfiguration();
-const repository = new BillingRepository();
-const subscriptionService = new SubscriptionService(repository);
+const databasePool = createDatabasePool();
+const repository = new BillingRepository(databasePool);
+await repository.init();
+const subscriptionService = new SubscriptionService(repository, { lifetimeBusinessEmail: env.lifetimeBusinessEmail });
 const gateway = new MercadoPagoService();
-const paymentService = new PaymentService(repository, subscriptionService, gateway);
+const couponService = new CouponService(repository);
+const paymentService = new PaymentService(repository, subscriptionService, gateway, couponService);
 const controller = createBillingController(paymentService, repository, gateway, subscriptionService);
 const router = new Router();
 const requestGuard = createRequestGuard();
@@ -35,11 +39,15 @@ const cors = createCorsMiddleware({
     ? []
     : ["http://localhost:4173", "http://127.0.0.1:4173"],
 });
-const databasePool = createDatabasePool();
 const legalRepository = databasePool ? new PostgresLegalRepository(databasePool) : new LegalRepository();
 await legalRepository.init?.();
+if (env.lifetimeBusinessEmail) {
+  const lifetimeUser = legalRepository.findUserByEmail?.(env.lifetimeBusinessEmail);
+  const lifetimeWorkspace = lifetimeUser && [...legalRepository.workspaces.values()].find((workspace) => workspace.ownerUserId === lifetimeUser.id);
+  if (lifetimeUser && lifetimeWorkspace) await subscriptionService.provisionLifetimeBusinessForUser(lifetimeUser, lifetimeWorkspace.id);
+}
 const consentService = new ConsentService(legalRepository);
-const authService = new AuthService(legalRepository, consentService);
+const authService = new AuthService(legalRepository, consentService, (user, workspaceId) => subscriptionService.provisionLifetimeBusinessForUser(user, workspaceId));
 const authController = createAuthController(authService);
 const accountService = new AccountService(legalRepository, repository, subscriptionService, gateway);
 const accountController = createAccountController(accountService);

@@ -2,13 +2,15 @@ export function createBillingController(paymentService, repository, gateway, sub
   return {
     async checkout(request) {
       const body = await request.json();
-      return paymentService.startCheckout({ ...request.auth, planCode: body.planId });
+      return paymentService.startCheckout({ ...request.auth, planCode: body.planId, couponCode: body.couponCode });
     },
     plans() {
       return repository.listPlans().map(({ id, code, name, description, priceCents, interval, limits, features }) => ({ id, code, name, description, priceCents, interval, limits, features }));
     },
     subscription(request) {
       const subscription = repository.findSubscription(request.auth.workspaceId);
+      const entitlement = subscriptionService.lifetimeEntitlement(request.auth.workspaceId);
+      if (entitlement) return { status: "active", plan: entitlement.planCode, subscriptionType: entitlement.subscriptionType, currentPeriodEnd: null };
       if (!subscription) return { status: "free", plan: "free" };
       return { id: subscription.id, status: subscription.status, plan: subscription.plan.code, currentPeriodStart: subscription.currentPeriodStart, currentPeriodEnd: subscription.currentPeriodEnd, canceledAt: subscription.canceledAt || null };
     },
