@@ -38,6 +38,6 @@ export class AuthService {
     const workspace = [...this.repository.workspaces.values()].find((item) => item.ownerUserId === user.id && item.status !== "DEACTIVATED");
     const membership = workspace && this.repository.findMembership(user.id, workspace.id);
     if (!workspace || !membership) throw new Error("INVALID_CREDENTIALS");
-    return { userId: user.id, workspaceId: workspace.id, accessToken: createSessionToken({ userId: user.id, workspaceId: workspace.id }) };
+    return { userId: user.id, workspaceId: workspace.id, name: user.name, email: user.email, accessToken: createSessionToken({ userId: user.id, workspaceId: workspace.id }) };
   }
 }

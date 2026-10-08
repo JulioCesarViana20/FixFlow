@@ -121,6 +121,17 @@ export async function createAccount({ name, email, password, userId, workspaceId
 
 export async function signIn(email, password, remoteSession = null) {
   if (remoteSession?.userId && remoteSession?.workspaceId && remoteSession?.accessToken) {
+    const existingUser = state.users.find((user) => user.id === remoteSession.userId);
+    if (existingUser) {
+      existingUser.email = remoteSession.email || existingUser.email || email;
+      existingUser.name = remoteSession.name || existingUser.name || email;
+      existingUser.workspaceId = remoteSession.workspaceId;
+    } else {
+      state.users.push({ id: remoteSession.userId, name: remoteSession.name || email, email: remoteSession.email || email, passwordHash: null, workspaceId: remoteSession.workspaceId });
+    }
+    if (!state.workspaces[remoteSession.workspaceId]) {
+      state.workspaces[remoteSession.workspaceId] = createRemoteWorkspace(remoteSession.name || email, remoteSession.workspaceId);
+    }
     state.session = { userId: remoteSession.userId, workspaceId: remoteSession.workspaceId, accessToken: remoteSession.accessToken };
     saveState();
     return true;
@@ -135,6 +146,24 @@ export async function signIn(email, password, remoteSession = null) {
   state.session = { userId: user.id, workspaceId: user.workspaceId, accessToken: state.session?.accessToken || null };
   saveState();
   return true;
+}
+
+function createRemoteWorkspace(owner, id) {
+  return {
+    id,
+    company: "",
+    owner,
+    phone: "",
+    type: "",
+    clients: [],
+    orders: [],
+    transactions: [],
+    activities: [],
+    notifications: [],
+    planCode: PLAN_CODES.FREE,
+    subscription: { planCode: PLAN_CODES.FREE, status: SUBSCRIPTION_STATUSES.FREE, billingPeriod: "month", currency: "BRL", currentPeriodStart: null, currentPeriodEnd: null, nextBillingAt: null, autoRenew: false, canceledAt: null, updatedAt: new Date().toISOString() },
+    preferences: { currency: "BRL", billingPeriod: "month", dateFormat: "DD/MM/AAAA", timezone: "America/Sao_Paulo", theme: "dark", notifications: { newOrder: true, statusChange: true, dueSoon: true, completed: true, finance: true } },
+  };
 }
 
 export function getAuthHeaders(contentType = false) {
