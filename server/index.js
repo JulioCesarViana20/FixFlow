@@ -21,6 +21,9 @@ import { registerAuthRoutes } from "./routes/auth.routes.js";
 import { AccountService } from "./services/account.service.js";
 import { createAccountController } from "./controllers/account.controller.js";
 import { registerAccountRoutes } from "./routes/account.routes.js";
+import { WorkspaceService } from "./services/workspace.service.js";
+import { createWorkspaceController } from "./controllers/workspace.controller.js";
+import { registerWorkspaceRoutes } from "./routes/workspace.routes.js";
 
 validateRuntimeConfiguration();
 const databasePool = createDatabasePool();
@@ -51,6 +54,8 @@ const authService = new AuthService(legalRepository, consentService, (user, work
 const authController = createAuthController(authService);
 const accountService = new AccountService(legalRepository, repository, subscriptionService, gateway);
 const accountController = createAccountController(accountService);
+const workspaceService = new WorkspaceService(legalRepository, databasePool);
+const workspaceController = createWorkspaceController(workspaceService);
 
 registerBillingRoutes(router, controller, (request, response, next) => {
   request.auth = requireAuth(request);
@@ -58,6 +63,10 @@ registerBillingRoutes(router, controller, (request, response, next) => {
 });
 registerAuthRoutes(router, authController);
 registerAccountRoutes(router, accountController, (request, response, next) => {
+  request.auth = requireAuth(request);
+  return next();
+});
+registerWorkspaceRoutes(router, workspaceController, (request, response, next) => {
   request.auth = requireAuth(request);
   return next();
 });

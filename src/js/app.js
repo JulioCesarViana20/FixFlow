@@ -1,5 +1,5 @@
 import { currentPath, navigate, registerRoute, startRouter } from "./core/router.js";
-import { applyTheme, isAuthenticated, resetDevelopmentPlan, setDevelopmentPlan, setDevelopmentSubscription } from "./core/store.js";
+import { applyTheme, hydrateRemoteWorkspace, isAuthenticated, resetDevelopmentPlan, setDevelopmentPlan, setDevelopmentSubscription } from "./core/store.js";
 import { SUBSCRIPTION_STATUSES } from "./config/plans.js";
 import { mountShell } from "./components/shell.js?v=ai1";
 import { hydrateIcons } from "./components/ui.js";
@@ -25,6 +25,9 @@ if (typeof window === "undefined" || typeof document === "undefined") {
   console.warn("FixFlow app skipped: browser runtime not available.");
 } else {
   const app = document.querySelector("#app");
+  if (isAuthenticated()) hydrateRemoteWorkspace().then(() => {
+    if (currentPath().startsWith("/app/")) window.dispatchEvent(new Event("hashchange"));
+  });
 
   if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
     window.fixflowDevPlans = {

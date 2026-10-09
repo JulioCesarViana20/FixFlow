@@ -1,5 +1,6 @@
 import { assertCanCreate, getCurrentPlan } from "./plan-access.js";
 import { PLAN_CODES, getPlan, SUBSCRIPTION_STATUSES } from "../config/plans.js";
+import { API_URL } from "../config/api.js";
 
 const STORAGE_KEY = "fixflow.app.v1";
 const emptyState = {
@@ -9,6 +10,8 @@ const emptyState = {
 };
 
 let state = loadState();
+let remoteWrite = Promise.resolve();
+let remoteVersion = null;
 
 function normalizeSubscription(workspace) {
   const planCode = getPlan(workspace.planCode || PLAN_CODES.FREE).code;
@@ -66,6 +69,54 @@ export function getState() {
 
 export function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  queueRemoteWorkspaceWrite();
+}
+
+function saveLocalState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function currentWorkspace() { return state.session ? state.workspaces[state.session.workspaceId] : null; }
+
+function queueRemoteWorkspaceWrite() {
+  const workspace = currentWorkspace();
+  if (!workspace?.id || !state.session?.accessToken) return;
+  remoteWrite = remoteWrite.then(async () => {
+    const response = await fetch(`${API_URL}/api/workspace`, { method: "POST", headers: getAuthHeaders(true), body: JSON.stringify({ data: workspace, version: remoteVersion }) });
+    if (response.ok) remoteVersion = (await response.json()).version;
+  }).catch(() => {});
+}
+
+export async function hydrateRemoteWorkspace() {
+  const workspace = currentWorkspace();
+  if (!workspace?.id || !state.session?.accessToken) return false;
+  try {
+    await remoteWrite;
+    const response = await fetch(`${API_URL}/api/workspace`, { headers: getAuthHeaders() });
+    if (!response.ok) return false;
+    const result = await response.json();
+    remoteVersion = result.version || 0;
+    const remote = result.data || {};
+    const hasRemoteData = Boolean(remote.orders?.length || remote.clients?.length || remote.transactions?.length || remote.activities?.length);
+    const hasLocalData = Boolean(workspace.orders?.length || workspace.clients?.length || workspace.transactions?.length || workspace.activities?.length);
+    if (hasRemoteData || !hasLocalData) {
+      state.workspaces[workspace.id] = { ...workspace, ...remote, id: workspace.id };
+      normalizeWorkspace(state.workspaces[workspace.id]);
+      saveLocalState();
+    } else {
+      queueRemoteWorkspaceWrite();
+    }
+    return true;
+  } catch { return false; }
+}
+
+function normalizeWorkspace(workspace) {
+  workspace.transactions ||= [];
+  workspace.notifications ||= [];
+  workspace.activities ||= [];
+  workspace.clients ||= [];
+  workspace.orders ||= [];
+  workspace.preferences = { currency: "BRL", billingPeriod: "month", dateFormat: "DD/MM/AAAA", timezone: "America/Sao_Paulo", theme: "dark", notifications: { newOrder: true, statusChange: true, dueSoon: true, completed: true, finance: true }, ...(workspace.preferences || {}) };
+  workspace.planCode = getPlan(workspace.planCode || PLAN_CODES.FREE).code;
+  workspace.subscription = normalizeSubscription(workspace);
 }
 
 export function getWorkspace() {
@@ -133,7 +184,7 @@ export async function signIn(email, password, remoteSession = null) {
       state.workspaces[remoteSession.workspaceId] = createRemoteWorkspace(remoteSession.name || email, remoteSession.workspaceId);
     }
     state.session = { userId: remoteSession.userId, workspaceId: remoteSession.workspaceId, accessToken: remoteSession.accessToken };
-    saveState();
+    saveLocalState();
     return true;
   }
   const passwordHash = await hashPassword(password);

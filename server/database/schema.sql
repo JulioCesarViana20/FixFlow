@@ -101,6 +101,15 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS workspace_data (
+  workspace_id UUID PRIMARY KEY REFERENCES workspaces(id) ON DELETE CASCADE,
+  data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  version BIGINT NOT NULL DEFAULT 1,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS workspace_data_updated_idx ON workspace_data(updated_at);
+
 INSERT INTO plans (code, name, description, price_cents, billing_interval, limits, features)
 VALUES
   ('free', 'Free', 'Para começar com organização', 0, 'month', '{"clients": 20, "orders": 20, "transactions": 20, "devices": 3, "teamMembers": 1}', '["basic_dashboard"]'),

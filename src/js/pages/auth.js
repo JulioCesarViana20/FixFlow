@@ -1,4 +1,4 @@
-import { createAccount, getState, saveState, signIn } from "../core/store.js";
+import { createAccount, getState, hydrateRemoteWorkspace, signIn } from "../core/store.js";
 import { navigate } from "../core/router.js";
 import { hydrateIcons, icon } from "../components/ui.js";
 import { validateEmail } from "../utils/validation.js";
@@ -55,6 +55,7 @@ export function bindAuth(type) {
     try { account = await loginAccount({ email, password }); }
     catch (error) { return showFormError(error.message === "AUTH_API_UNAVAILABLE" ? "O serviço de login está offline. Inicie a API e tente novamente." : "Não foi possível entrar. Verifique os dados informados."); }
     if (!(await signIn(email, password, account))) return showFormError("Não foi possível entrar. Verifique os dados informados.");
+    void hydrateRemoteWorkspace();
     const returnTo = sessionStorage.getItem("fixflow.returnTo") || "/app/dashboard";
     sessionStorage.removeItem("fixflow.returnTo");
     navigate(returnTo);
