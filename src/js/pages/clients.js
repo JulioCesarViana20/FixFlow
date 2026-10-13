@@ -1,7 +1,7 @@
 import { addClient, deleteClient, deleteClients, getWorkspace, updateClient } from "../core/store.js";
 import { escapeHtml, formatCurrency, getInitials } from "../utils/format.js";
 import { formatInternationalPhone, formatCnpj, formatCpf, PHONE_COUNTRIES, validateInternationalPhone, validateCpf, validateCnpj, validateEmail } from "../utils/validation.js";
-import { emptyState, hydrateIcons, icon, pageHeader, primaryButton, showPlanLimitError, showToast } from "../components/ui.js";
+import { bindModal, emptyState, hydrateIcons, icon, pageHeader, primaryButton, showPlanLimitError, showToast } from "../components/ui.js";
 
 export function clientsPage() {
   const clients = getWorkspace().clients || [];
@@ -52,7 +52,7 @@ export function bindClients() {
     country.addEventListener("change", formatPhone);
     const toggle = () => { root.querySelector("#individual-fields").classList.toggle("is-hidden", type.value === "company"); root.querySelector("#company-fields").classList.toggle("is-hidden", type.value !== "company"); };
     type.onchange = toggle;
-    root.querySelectorAll("[data-close-modal]").forEach((button) => { button.onclick = () => { root.innerHTML = ""; }; });
+    bindModal(root);
     form.onsubmit = (event) => {
       event.preventDefault();
       const data = Object.fromEntries(new FormData(form));

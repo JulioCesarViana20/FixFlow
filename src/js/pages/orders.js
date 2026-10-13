@@ -1,6 +1,6 @@
 import { addOrder, deleteOrder, deleteOrders, getWorkspace, updateOrder } from "../core/store.js";
 import { escapeHtml, formatCurrency } from "../utils/format.js";
-import { hydrateIcons, icon, pageHeader, primaryButton, showPlanLimitError, showToast } from "../components/ui.js";
+import { bindModal, hydrateIcons, icon, pageHeader, primaryButton, showPlanLimitError, showToast } from "../components/ui.js";
 import { todayInputValue } from "../utils/validation.js";
 import { formatDate } from "../utils/format.js";
 
@@ -49,7 +49,7 @@ export function bindOrderCards() {
   };
   const open = (order = {}) => {
     root.innerHTML = orderForm(order);
-    root.querySelectorAll("[data-close-modal]").forEach((button) => { button.onclick = () => { root.innerHTML = ""; }; });
+    bindModal(root);
     root.querySelector("form").onsubmit = (event) => {
       event.preventDefault();
       const values = Object.fromEntries(new FormData(event.currentTarget));

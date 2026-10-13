@@ -59,8 +59,11 @@ export class AccountService {
     this.audit(auth, "ACCOUNT_DELETION_REQUESTED", "accepted");
     this.billingRepository.deleteWorkspace(auth.workspaceId);
     this.repository.deleteWorkspace(auth.workspaceId);
-    this.repository.users.delete(user.id);
+    if (this.repository.deleteUser) this.repository.deleteUser(user.id);
+    else this.repository.users.delete(user.id);
     this.repository.saveAudit({ id: crypto.randomUUID(), userId: auth.userId, workspaceId: auth.workspaceId, action: "ACCOUNT_DELETED", result: "completed", createdAt: new Date().toISOString() });
+    await this.billingRepository.flush?.();
+    await this.repository.flush?.();
     return { status: "DELETED" };
   }
 

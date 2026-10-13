@@ -52,6 +52,15 @@ export class BillingRepository {
   saveRedemption(redemption) { this.couponRedemptions.set(`${redemption.couponId}:${redemption.userId}:${redemption.workspaceId}`, redemption); if (this.pool) this.enqueue(() => this.pool.query(`INSERT INTO coupon_redemptions (id,coupon_id,user_id,workspace_id,payment_id,discount_percent,discount_cents) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (coupon_id,user_id,workspace_id) DO NOTHING`, [redemption.id, redemption.couponId, redemption.userId, redemption.workspaceId, redemption.paymentId || null, redemption.discountPercent, redemption.discountCents])); return redemption; }
   findEntitlement(workspaceId) { return [...this.entitlements.values()].find((item) => item.workspaceId === workspaceId && item.status === "active"); }
   saveEntitlement(entitlement) { this.entitlements.set(entitlement.id, entitlement); if (this.pool) this.enqueue(() => this.pool.query(`INSERT INTO entitlements (id,user_id,workspace_id,plan_code,status,subscription_type,expires_at,granted_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (id) DO UPDATE SET status=EXCLUDED.status,expires_at=EXCLUDED.expires_at,updated_at=now()`, [entitlement.id, entitlement.userId, entitlement.workspaceId, entitlement.planCode, entitlement.status, entitlement.subscriptionType, entitlement.expiresAt || null, entitlement.grantedBy || null])); return entitlement; }
-  deleteWorkspace(workspaceId) { for (const [id, item] of this.subscriptions) if (item.workspaceId === workspaceId) this.subscriptions.delete(id); for (const [id, item] of this.payments) if (item.workspaceId === workspaceId) this.payments.delete(id); for (const [id, item] of this.entitlements) if (item.workspaceId === workspaceId) this.entitlements.delete(id); }
+  deleteWorkspace(workspaceId) {
+    for (const [id, item] of this.subscriptions) if (item.workspaceId === workspaceId) this.subscriptions.delete(id);
+    for (const [id, item] of this.payments) if (item.workspaceId === workspaceId) this.payments.delete(id);
+    for (const [id, item] of this.entitlements) if (item.workspaceId === workspaceId) this.entitlements.delete(id);
+    if (this.pool) this.enqueue(async () => {
+      await this.pool.query("DELETE FROM payments WHERE workspace_id = $1", [workspaceId]);
+      await this.pool.query("DELETE FROM subscriptions WHERE workspace_id = $1", [workspaceId]);
+      await this.pool.query("DELETE FROM entitlements WHERE workspace_id = $1", [workspaceId]);
+    });
+  }
   async flush() { await this.pending; }
 }

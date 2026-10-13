@@ -371,19 +371,31 @@ Install dependencies:
 npm install
 ```
 
-Create your environment file:
+Copy the example environment file and adjust the values:
 
 ```bash
-.env
+cp .env.example .env
 ```
 
-Configure the required environment variables and start the application:
+In one terminal, start the API:
 
 ```bash
-npm start
+npm run dev:api
 ```
 
-The exact commands may change depending on the current project configuration.
+In another terminal, serve the frontend:
+
+```bash
+npm run start:web
+```
+
+Open `http://localhost:4173` in your browser. The frontend talks to the API on port `3000` by default.
+
+Run the automated checks with:
+
+```bash
+npm test
+```
 
 ---
 

@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node server/index.js",
-    "start:web": "python3 -m http.server 4173",
+    "start:web": "node server/dev-static.js",
     "dev:api": "node --env-file=.env server/index.js",
+    "dev": "node --env-file=.env server/index.js",
     "start:api": "node server/index.js",
     "db:migrate": "node server/database/migrate.js",
     "test": "node --check src/js/app.js && node --check server/index.js && node --test server/tests/*.test.js"

@@ -57,6 +57,18 @@ function bindShellEvents() {
     document.addEventListener("click", closeShellPopovers);
     document.body.dataset.shellPopoverBinding = "true";
   }
+  if (!document.body.dataset.shellKeyboardBinding) {
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      const sidebar = document.querySelector("#sidebar");
+      if (sidebar?.classList.contains("open")) {
+        sidebar.classList.remove("open");
+        return;
+      }
+      document.querySelector(".notification-center")?.classList.remove("open");
+    });
+    document.body.dataset.shellKeyboardBinding = "true";
+  }
   document.querySelector("[data-logout]").onclick = () => {
     signOut();
     navigate("/");

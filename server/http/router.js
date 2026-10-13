@@ -38,9 +38,8 @@ export function send(response, status, body) {
   const headers = {
     "content-type": "application/json; charset=utf-8",
     "x-content-type-options": "nosniff",
-    "access-control-allow-origin": "*",
-    "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "access-control-allow-headers": "Content-Type, Authorization",
+    "x-frame-options": "DENY",
+    "referrer-policy": "strict-origin-when-cross-origin",
   };
 
   response.writeHead(status, headers);
@@ -52,4 +51,3 @@ function publicError(error) {
   const safe = new Set(["UNAUTHORIZED", "OWNER_REQUIRED", "WORKSPACE_NOT_FOUND", "SUBSCRIPTION_NOT_FOUND", "FEATURE_REQUIRES_UPGRADE", "PAYMENT_GATEWAY_NOT_CONFIGURED", "PAYMENT_NOT_FOUND", "PAYMENT_AMOUNT_MISMATCH", "INVALID_WEBHOOK", "PLAN_NOT_FOUND", "REQUEST_TOO_LARGE", "WORKSPACE_DATA_TOO_LARGE", "WORKSPACE_VERSION_CONFLICT", "ALREADY_ON_PLAN", "FREE_PLAN_DOES_NOT_REQUIRE_CHECKOUT", "LEGAL_ACCEPTANCE_REQUIRED", "INVALID_REGISTRATION", "EMAIL_ALREADY_REGISTERED", "INVALID_DELETE_CONFIRMATION", "REAUTHENTICATION_FAILED", "DELETION_IN_PROGRESS", "ACCOUNT_ALREADY_DEACTIVATED", "INVALID_CREDENTIALS"]);
   return safe.has(error.message) ? error.message : "REQUEST_FAILED";
 }
-

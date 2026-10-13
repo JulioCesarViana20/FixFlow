@@ -23,6 +23,25 @@ export function primaryButton(label, action) {
   return `<button class="primary-button" data-action="${action}">${icon("plus")}${label}</button>`;
 }
 
+export function bindModal(root, { closeSelector = "[data-close-modal], [data-close-subscription-modal]" } = {}) {
+  if (!root) return () => {};
+  const close = () => {
+    document.removeEventListener("keydown", onKeydown);
+    root.innerHTML = "";
+  };
+  const onKeydown = (event) => {
+    if (event.key === "Escape") close();
+  };
+  root.querySelectorAll(closeSelector).forEach((button) => { button.onclick = close; });
+  const backdrop = root.querySelector(".modal-backdrop");
+  backdrop?.addEventListener("click", (event) => {
+    if (event.target === backdrop) close();
+  });
+  document.addEventListener("keydown", onKeydown);
+  root.querySelector("input, select, textarea, button:not(.icon-button)")?.focus();
+  return close;
+}
+
 export function showPlanLimitError(node, error) {
   node.hidden = false;
   node.textContent = "";

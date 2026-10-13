@@ -93,7 +93,7 @@ test("limite de equipe varia por plano", async () => {
   assert.equal(context.subscriptions.canCreate("workspace-c", "teamMembers", 9), true);
 });
 
-test("cupom Ã© validado no backend e reduz o valor oficial", async () => {
+test("cupom é validado no backend e reduz o valor oficial", async () => {
   const context = setup();
   context.repository.saveCoupon({ id: "coupon-10", code: "SAVE10", discountPercent: 10, active: true, usageCount: 0, planCode: "pro" });
   const result = await context.payments.startCheckout({ workspaceId: "workspace-coupon", userId: "user-coupon", planCode: "pro", couponCode: "save10" });
@@ -104,7 +104,7 @@ test("cupom Ã© validado no backend e reduz o valor oficial", async () => {
   assert.equal(context.repository.couponRedemptions.size, 1);
 });
 
-test("cupom expirado ou fora do plano Ã© rejeitado", async () => {
+test("cupom expirado ou fora do plano é rejeitado", async () => {
   const context = setup();
   context.repository.saveCoupon({ id: "coupon-expired", code: "OLD", discountPercent: 50, active: true, expiresAt: "2020-01-01T00:00:00.000Z", usageCount: 0 });
   await assert.rejects(() => context.payments.startCheckout({ workspaceId: "workspace-old", userId: "user-old", planCode: "pro", couponCode: "OLD" }), /COUPON_EXPIRED/);
@@ -112,7 +112,7 @@ test("cupom expirado ou fora do plano Ã© rejeitado", async () => {
   await assert.rejects(() => context.payments.startCheckout({ workspaceId: "workspace-wrong", userId: "user-wrong", planCode: "pro", couponCode: "BUSINESS" }), /COUPON_NOT_APPLICABLE/);
 });
 
-test("entitlement Business vitalÃ­cio ignora expiraÃ§Ã£o da assinatura", () => {
+test("entitlement Business vitalício ignora expiração da assinatura", () => {
   const repository = new BillingRepository();
   const subscriptions = new SubscriptionService(repository, { lifetimeBusinessEmail: "owner@example.com" });
   const entitlement = subscriptions.provisionLifetimeBusinessForUser({ id: "user-lifetime", email: "owner@example.com" }, "workspace-lifetime");

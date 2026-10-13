@@ -1,5 +1,5 @@
 import { cancelSubscription, getAuthHeaders, getState, getWorkspace, updatePreferences } from "../core/store.js";
-import { pageHeader, icon, showToast } from "../components/ui.js";
+import { bindModal, pageHeader, icon, showToast } from "../components/ui.js";
 import { API_URL } from "../config/api.js";
 import { getCurrentPlan, getLimit, getSubscriptionStatus, getUsage, limitText } from "../core/plan-access.js";
 import { isPlanDowngrade, PLAN_CATALOG, planPriceCents, SUBSCRIPTION_STATUSES } from "../config/plans.js";
@@ -57,15 +57,28 @@ export async function bindBilling() {
   const openCancelModal = () => {
     const subscription = getWorkspace().subscription;
     modalRoot.innerHTML = `<div class="modal-backdrop"><section class="modal subscription-modal" role="dialog" aria-modal="true" aria-labelledby="cancel-subscription-title"><div class="modal-heading"><div><p class="eyebrow">Minha assinatura</p><h2 id="cancel-subscription-title">Cancelar assinatura?</h2></div><button class="icon-button" data-close-subscription-modal aria-label="Fechar">${icon("x")}</button></div><p>Seu plano ${getCurrentPlan(getWorkspace()).name} continuará disponível até <strong>${formatDate(subscription.currentPeriodEnd)}</strong>. Depois disso, a conta retornará ao plano Free e nenhuma nova renovação será cobrada.</p><p class="form-hint">Este fluxo cancela a renovação. Ele não solicita reembolso nem apaga seus dados.</p><div class="modal-actions"><button class="secondary-button" data-close-subscription-modal>Manter assinatura</button><button class="danger-button" data-confirm-cancel>Continuar cancelamento</button></div></section></div>`;
-    modalRoot.querySelectorAll("[data-close-subscription-modal]").forEach((button) => { button.onclick = () => { modalRoot.innerHTML = ""; }; });
-    modalRoot.querySelector("[data-confirm-cancel]").onclick = () => {
+    bindModal(modalRoot);
+    modalRoot.querySelector("[data-confirm-cancel]").onclick = async (event) => {
+      const confirmButton = event.currentTarget;
+      confirmButton.disabled = true;
+      confirmButton.textContent = "Cancelando...";
       try {
+        const response = await fetch(`${API_URL}/api/billing/cancel`, {
+          method: "POST",
+          headers: getAuthHeaders(true),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "CANCELLATION_FAILED");
         cancelSubscription();
         modalRoot.innerHTML = `<div class="modal-backdrop"><section class="modal subscription-modal" role="dialog" aria-modal="true"><div class="modal-heading"><div><p class="eyebrow">Minha assinatura</p><h2>Assinatura cancelada</h2></div><button class="icon-button" data-close-subscription-modal aria-label="Fechar">${icon("x")}</button></div><p>Você não será cobrado na próxima renovação. Seu acesso pago permanece disponível até <strong>${formatDate(getWorkspace().subscription.currentPeriodEnd)}</strong>.</p><div class="modal-actions"><button class="primary-button" data-close-subscription-modal>Entendi</button></div></section></div>`;
         modalRoot.querySelectorAll("[data-close-subscription-modal]").forEach((button) => { button.onclick = () => { modalRoot.innerHTML = ""; render(); }; });
         render();
-      } catch {
-        showToast("Não foi possível cancelar esta assinatura.");
+      } catch (error) {
+        confirmButton.disabled = false;
+        confirmButton.textContent = "Continuar cancelamento";
+        showToast(error.message === "PAYMENT_GATEWAY_NOT_CONFIGURED"
+          ? "O cancelamento online ainda não está disponível."
+          : "Não foi possível cancelar esta assinatura.");
       }
     };
   };

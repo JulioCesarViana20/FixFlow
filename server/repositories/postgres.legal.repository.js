@@ -28,6 +28,34 @@ export class PostgresLegalRepository {
   findMembership(userId, workspaceId) { return this.memberships.get(`${userId}:${workspaceId}`); }
   listAcceptances(userId) { return [...this.acceptances.values()].filter((item) => item.userId === userId); }
 
+  deleteUser(userId) {
+    this.users.delete(userId);
+    for (const [key, membership] of this.memberships) {
+      if (membership.userId === userId) this.memberships.delete(key);
+    }
+    this.enqueue(async () => {
+      await this.pool.query("DELETE FROM legal_acceptances WHERE user_id = $1", [userId]);
+      await this.pool.query("DELETE FROM workspace_members WHERE user_id = $1", [userId]);
+      await this.pool.query("DELETE FROM users WHERE id = $1", [userId]);
+    });
+  }
+
+  deleteWorkspace(workspaceId) {
+    this.workspaces.delete(workspaceId);
+    for (const [key, membership] of this.memberships) {
+      if (membership.workspaceId === workspaceId) this.memberships.delete(key);
+    }
+    for (const [id, acceptance] of this.acceptances) {
+      if (acceptance.workspaceId === workspaceId) this.acceptances.delete(id);
+    }
+    this.enqueue(async () => {
+      await this.pool.query("DELETE FROM workspace_data WHERE workspace_id = $1", [workspaceId]);
+      await this.pool.query("DELETE FROM legal_acceptances WHERE workspace_id = $1", [workspaceId]);
+      await this.pool.query("DELETE FROM workspace_members WHERE workspace_id = $1", [workspaceId]);
+      await this.pool.query("DELETE FROM workspaces WHERE id = $1", [workspaceId]);
+    });
+  }
+
   enqueue(operation) { this.pending = this.pending.then(operation); return this.pending; }
 
   saveUser(user) {

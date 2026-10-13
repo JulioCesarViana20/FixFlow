@@ -1,5 +1,5 @@
-import { applyTheme, deactivateLocalAccount, deleteLocalAccount, getAuthHeaders, getCurrentUser, getWorkspace, signOut, updatePreferences, updateWorkspace } from "../core/store.js";
-import { icon, pageHeader } from "../components/ui.js";
+import { applyTheme, deactivateLocalAccount, deleteLocalAccount, getAuthHeaders, getCurrentUser, getState, getWorkspace, signOut, updatePreferences, updateWorkspace } from "../core/store.js";
+import { bindModal, icon, pageHeader } from "../components/ui.js";
 import { navigate } from "../core/router.js";
 import { escapeHtml } from "../utils/format.js";
 import { formatInternationalPhone, formatBrazilianZipCode, formatCnpj, PHONE_COUNTRIES, validateInternationalPhone } from "../utils/validation.js";
@@ -50,26 +50,26 @@ function openDangerModal(action) {
   const isDelete = action === "delete";
   const title = action === "deactivate" ? "Desativar conta?" : "Excluir conta permanentemente";
   const body = action === "deactivate" ? "O acesso será bloqueado temporariamente. Nenhum dado será apagado e a reativação dependerá de um fluxo autorizado." : "Esta ação é potencialmente irreversível. Ela afetará o workspace, usuários, contatos, demandas, histórico e dados associados. Backups podem seguir sua política de retenção.";
-  root.innerHTML = `<div class="modal-backdrop danger-modal-backdrop" role="presentation"><section class="modal danger-modal" role="dialog" aria-modal="true" aria-labelledby="danger-modal-title"><div class="modal-heading"><div><p class="eyebrow danger-eyebrow">Confirmação necessária</p><h2 id="danger-modal-title">${title}</h2></div><button class="icon-button" data-close-modal aria-label="Fechar">${icon("x")}</button></div><p class="modal-copy">${body}</p>${isDelete ? '<form id="delete-confirm-form"><label>Digite <strong>DELETE MY FIXFLOW ACCOUNT</strong><input name="confirmation" required autocomplete="off" spellcheck="false"></label><label>Senha atual<input name="password" type="password" required autocomplete="current-password"></label><button class="danger-button" type="submit">Excluir permanentemente</button></form>' : '<div class="modal-actions"><button class="secondary-button" data-close-modal>Voltar</button><button class="danger-button" data-confirm-action="deactivate">Desativar conta</button></div>'}</section></div>`;
-  root.querySelectorAll("[data-close-modal]").forEach((button) => { button.onclick = closeDangerModal; });
-  root.querySelector("[data-confirm-action]")?.addEventListener("click", () => runDangerAction(action));
-  root.querySelector("#delete-confirm-form")?.addEventListener("submit", (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); runDangerAction("delete", { confirmation: form.get("confirmation"), password: form.get("password") }); });
-  root.querySelector("input")?.focus();
+  root.innerHTML = `<div class="modal-backdrop danger-modal-backdrop" role="presentation"><section class="modal danger-modal" role="dialog" aria-modal="true" aria-labelledby="danger-modal-title"><div class="modal-heading"><div><p class="eyebrow danger-eyebrow">Confirmação necessária</p><h2 id="danger-modal-title">${title}</h2></div><button class="icon-button" data-close-modal aria-label="Fechar">${icon("x")}</button></div><p class="modal-copy">${body}</p>${isDelete ? '<form id="delete-confirm-form"><label>Digite <strong>DELETE MY FIXFLOW ACCOUNT</strong><input name="confirmation" required autocomplete="off" spellcheck="false"></label><label>Senha atual<input name="password" type="password" required autocomplete="current-password"></label><div class="modal-actions"><button class="secondary-button" type="button" data-close-modal>Voltar</button><button class="danger-button" type="submit">Excluir permanentemente</button></div></form>' : '<div class="modal-actions"><button class="secondary-button" data-close-modal>Voltar</button><button class="danger-button" data-confirm-action="deactivate">Desativar conta</button></div>'}</section></div>`;
+  const closeDangerModal = bindModal(root, { closeSelector: "[data-close-modal]" });
+  root.querySelector("[data-confirm-action]")?.addEventListener("click", () => runDangerAction(action, {}, closeDangerModal));
+  root.querySelector("#delete-confirm-form")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    runDangerAction("delete", { confirmation: form.get("confirmation"), password: form.get("password") }, closeDangerModal);
+  });
 }
 
-function closeDangerModal() { document.querySelector("#danger-modal-root").innerHTML = ""; }
-
-async function runDangerAction(action, payload = {}) {
+async function runDangerAction(action, payload = {}, closeDangerModal = () => {}) {
   const button = document.querySelector("[data-confirm-action], #delete-confirm-form button[type=submit]");
   if (button) { button.disabled = true; button.textContent = "Processando..."; }
   const endpoints = { deactivate: "/api/account/deactivate", delete: "/api/account/delete" };
+  const hasRemoteSession = Boolean(getState().session?.accessToken);
   try {
-    try {
+    if (hasRemoteSession) {
       const response = await fetch(`${API_URL}${endpoints[action]}`, { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "REQUEST_FAILED");
-    } catch (error) {
-      if (!(error instanceof TypeError)) throw error;
     }
     const localCompleted = action === "delete"
       ? await deleteLocalAccount(payload.confirmation, payload.password)
@@ -79,8 +79,20 @@ async function runDangerAction(action, payload = {}) {
     showDangerFeedback(action === "delete" ? "A conta foi excluída." : "A conta foi desativada.", false);
     if (action === "delete" || action === "deactivate") { signOut(); navigate("/"); }
   } catch (error) {
-    if (button) { button.disabled = false; button.textContent = "Tentar novamente"; }
-    showDangerFeedback(error.message === "OWNER_REQUIRED" ? "Apenas o proprietário pode executar esta ação." : error.message === "PAYMENT_GATEWAY_NOT_CONFIGURED" ? "O gateway ainda não está configurado; nenhuma alteração foi aplicada." : error.message === "REAUTHENTICATION_FAILED" ? "A senha atual não foi confirmada." : error.message === "ACCOUNT_ALREADY_DEACTIVATED" ? "Esta conta já está desativada." : error.message === "LOCAL_ACCOUNT_OPERATION_FAILED" ? "Não foi possível atualizar os dados locais da conta." : "Não foi possível concluir a operação.", true);
+    if (button) {
+      button.disabled = false;
+      button.textContent = action === "delete" ? "Excluir permanentemente" : "Desativar conta";
+    }
+    showDangerFeedback(
+      error instanceof TypeError ? "Não foi possível contactar o servidor. Tente novamente."
+        : error.message === "OWNER_REQUIRED" ? "Apenas o proprietário pode executar esta ação."
+          : error.message === "PAYMENT_GATEWAY_NOT_CONFIGURED" ? "O gateway ainda não está configurado; nenhuma alteração foi aplicada."
+            : error.message === "REAUTHENTICATION_FAILED" ? "A senha atual não foi confirmada."
+              : error.message === "ACCOUNT_ALREADY_DEACTIVATED" ? "Esta conta já está desativada."
+                : error.message === "LOCAL_ACCOUNT_OPERATION_FAILED" ? "Não foi possível atualizar os dados locais da conta."
+                  : "Não foi possível concluir a operação.",
+      true,
+    );
   }
 }
 

@@ -1,6 +1,6 @@
 import { addTransaction, deleteTransaction, deleteTransactions, getWorkspace, updateTransaction } from "../core/store.js";
 import { escapeHtml, formatCurrency, formatDate } from "../utils/format.js";
-import { icon, pageHeader, primaryButton, showPlanLimitError, showToast } from "../components/ui.js";
+import { bindModal, icon, pageHeader, primaryButton, showPlanLimitError, showToast } from "../components/ui.js";
 import { navigate } from "../core/router.js";
 
 export function financePage() {
@@ -46,7 +46,7 @@ export function bindFinance() {
   const root = document.querySelector("#transaction-modal-root");
   const openTransaction = (transaction = {}) => {
     root.innerHTML = transactionForm(transaction);
-    root.querySelectorAll("[data-close-modal]").forEach((button) => { button.onclick = () => { root.innerHTML = ""; }; });
+    bindModal(root);
     root.querySelector("form").onsubmit = (event) => {
       event.preventDefault();
       const form = event.currentTarget;

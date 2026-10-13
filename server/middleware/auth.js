@@ -1,10 +1,21 @@
 import { bearerToken, verifySessionToken } from "../services/session-token.service.js";
 import { env } from "../config/env.js";
 
-export function requireAuth(request) {
+export function requireAuth(request, repository = null) {
   const token = bearerToken(request);
   if (token) {
-    try { return verifySessionToken(token); } catch {
+    try {
+      const claims = verifySessionToken(token);
+      if (repository) {
+        const user = repository.findUser?.(claims.userId);
+        const workspace = repository.findWorkspace?.(claims.workspaceId);
+        const membership = repository.findMembership?.(claims.userId, claims.workspaceId);
+        if (!user || ["DEACTIVATED", "DELETED"].includes(user.status)
+          || !workspace || ["DEACTIVATED", "DELETED", "DELETION_PROCESSING"].includes(workspace.status)
+          || !membership) throw new Error("UNAUTHORIZED");
+      }
+      return claims;
+    } catch {
       const error = new Error("UNAUTHORIZED");
       error.statusCode = 401;
       throw error;

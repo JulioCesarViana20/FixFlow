@@ -7,6 +7,7 @@ import { ConsentService } from "../services/consent.service.js";
 import { AuthService } from "../services/auth.service.js";
 import { createSessionToken } from "../services/session-token.service.js";
 import { requireAuth } from "../middleware/auth.js";
+import { createCorsMiddleware } from "../middleware/cors.js";
 
 function setup() {
   const repository = new LegalRepository();
@@ -78,6 +79,7 @@ test("cadastro responde com headers CORS para o frontend", async () => {
     headers: {
       "content-type": "application/json",
       "content-length": String(Buffer.byteLength(payload, "utf8")),
+      origin: "http://localhost:4173",
     },
     socket: { remoteAddress: "127.0.0.1" },
     async *[Symbol.asyncIterator]() {
@@ -87,6 +89,9 @@ test("cadastro responde com headers CORS para o frontend", async () => {
 
   const response = {
     headers: {},
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
     writeHead(status, headers) {
       this.statusCode = status;
       Object.assign(this.headers, headers);
@@ -96,10 +101,14 @@ test("cadastro responde com headers CORS para o frontend", async () => {
     },
   };
 
-  await router.handle(request, response);
+  await new Promise((resolve) => createCorsMiddleware({ allowedOrigin: "http://localhost:4173" })(
+    request,
+    response,
+    () => router.handle(request, response).then(resolve),
+  ));
 
   assert.equal(response.statusCode, 200);
-  assert.equal(response.headers["access-control-allow-origin"], "*");
+  assert.equal(response.headers["access-control-allow-origin"], "http://localhost:4173");
   assert.match(String(response.headers["access-control-allow-methods"]), /POST/i);
 });
 
@@ -121,4 +130,14 @@ test("login rejeita senha inválida e token adulterado", async () => {
   await assert.rejects(() => context.auth.login({ email: "owner@example.com", password: "senha-errada" }), /INVALID_CREDENTIALS/);
   const token = createSessionToken({ userId: "user-1", workspaceId: "workspace-1" });
   assert.throws(() => requireAuth({ headers: { authorization: `Bearer ${token}x` } }), /UNAUTHORIZED/);
+});
+
+test("sessão rejeita usuário ou workspace que deixou de estar autorizado", async () => {
+  const context = setup();
+  const registered = await context.auth.register(registration());
+  const request = { headers: { authorization: `Bearer ${registered.accessToken}` } };
+
+  assert.equal(requireAuth(request, context.repository).userId, registered.userId);
+  context.repository.memberships.clear();
+  assert.throws(() => requireAuth(request, context.repository), /UNAUTHORIZED/);
 });

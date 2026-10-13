@@ -58,18 +58,25 @@ const workspaceService = new WorkspaceService(legalRepository, databasePool);
 const workspaceController = createWorkspaceController(workspaceService);
 
 registerBillingRoutes(router, controller, (request, response, next) => {
-  request.auth = requireAuth(request);
+  request.auth = requireAuth(request, legalRepository);
   return next();
 });
 registerAuthRoutes(router, authController);
 registerAccountRoutes(router, accountController, (request, response, next) => {
-  request.auth = requireAuth(request);
+  request.auth = requireAuth(request, legalRepository);
   return next();
 });
 registerWorkspaceRoutes(router, workspaceController, (request, response, next) => {
-  request.auth = requireAuth(request);
+  request.auth = requireAuth(request, legalRepository);
   return next();
 });
+
+router.get("/health", () => ({
+  ok: true,
+  service: "fixflow-api",
+  environment: env.nodeEnv,
+  database: Boolean(databasePool),
+}));
 
 const server = createServer((request, response) => cors(request, response, () => requestGuard(request, response, () => router.handle(request, response))));
 server.listen(env.port, () => console.log(`Server rodando na porta ${env.port}`));
